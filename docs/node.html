@@ -1,0 +1,1279 @@
+<!DOCTYPE html>  <html> <head>   <title>node.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="diagram.html">                 diagram.js               </a>                                           <a class="source" href="node.html">                 node.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               node.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Override Raphael</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">is</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span> 
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">type</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">+</span><span class="nx">type</span><span class="p">).</span><span class="nx">toLowerCase</span><span class="p">();</span> 
+    <span class="p">};</span>
+
+    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span> 
+        <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s1">&#39;ellipse&#39;</span><span class="o">:</span>
+        <span class="k">case</span> <span class="s1">&#39;circle&#39;</span><span class="o">:</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;cx&#39;</span><span class="p">);</span>
+        <span class="k">default</span><span class="o">:</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+        <span class="p">}</span> 
+    <span class="p">};</span>
+
+    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">rdxy</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">direction</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s1">&#39;ellipse&#39;</span><span class="o">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;ne&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">dy</span> <span class="o">=</span> <span class="o">-</span><span class="nx">dy</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;sw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">dx</span> <span class="o">=</span> <span class="o">-</span><span class="nx">dx</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="kd">var</span> <span class="nx">sumx</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">orx</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">sumy</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">orx</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">;</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="nx">rx</span><span class="o">:</span> <span class="nx">isNatural</span><span class="p">(</span><span class="nx">sumx</span><span class="p">)</span> <span class="o">?</span> <span class="nx">sumx</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">orx</span><span class="p">,</span>
+                <span class="nx">ry</span><span class="o">:</span> <span class="nx">isNatural</span><span class="p">(</span><span class="nx">sumy</span><span class="p">)</span> <span class="o">?</span> <span class="nx">sumy</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ory</span>
+            <span class="p">};</span>
+        <span class="k">case</span> <span class="s1">&#39;circle&#39;</span><span class="o">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;ne&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">dy</span> <span class="o">=</span> <span class="o">-</span><span class="nx">dy</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="kd">var</span> <span class="nx">sumr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">or</span> <span class="o">+</span> <span class="p">(</span><span class="nx">dy</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="o">:</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="nx">dy</span><span class="o">*</span><span class="nx">dy</span><span class="p">);</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="nx">r</span><span class="o">:</span> <span class="nx">isNatural</span><span class="p">(</span><span class="nx">sumr</span><span class="p">)</span> <span class="o">?</span> <span class="nx">sumr</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">or</span>
+            <span class="p">};</span>
+        <span class="k">case</span> <span class="s1">&#39;rect&#39;</span><span class="o">:</span>
+            <span class="kd">var</span> <span class="nx">w</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ow</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;sw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">w</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ow</span> <span class="o">-</span> <span class="nx">dx</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="kd">var</span> <span class="nx">h</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">oh</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;ne&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">h</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">oh</span> <span class="o">-</span> <span class="nx">dy</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">oy</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ox</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;sw&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">x</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ox</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;ne&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">y</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">oy</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="nx">width</span><span class="o">:</span> <span class="nx">isNatural</span><span class="p">(</span><span class="nx">w</span><span class="p">)</span> <span class="o">?</span> <span class="nx">w</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ow</span><span class="p">,</span>
+                <span class="nx">height</span><span class="o">:</span> <span class="nx">isNatural</span><span class="p">(</span><span class="nx">h</span><span class="p">)</span> <span class="o">?</span> <span class="nx">h</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">oh</span><span class="p">,</span>
+                <span class="nx">y</span><span class="o">:</span> <span class="nx">y</span><span class="p">,</span>
+                <span class="nx">x</span><span class="o">:</span> <span class="nx">x</span>
+            <span class="p">};</span>
+        <span class="k">default</span><span class="o">:</span>
+            <span class="k">return</span> <span class="p">{};</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
+
+    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span> 
+        <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s1">&#39;ellipse&#39;</span><span class="o">:</span>
+        <span class="k">case</span> <span class="s1">&#39;circle&#39;</span><span class="o">:</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;cy&#39;</span><span class="p">);</span>
+        <span class="k">default</span><span class="o">:</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+        <span class="p">}</span> 
+    <span class="p">};</span>
+
+    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">o</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span> 
+        <span class="k">this</span><span class="p">.</span><span class="nx">ox</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="p">();</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">oy</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="p">();</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">ow</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;width&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">oh</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">or</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">orx</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;rx&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">ory</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;ry&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">;</span> 
+    <span class="p">};</span>
+
+    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">getABox</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">b</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getBBox</span><span class="p">();</span>
+        <span class="kd">var</span> <span class="nx">o</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="nx">x</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span>
+                <span class="nx">y</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span>
+                <span class="nx">width</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span>
+                <span class="nx">height</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span>
+
+                <span class="nx">xLeft</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span>
+                <span class="nx">xCenter</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">b</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="nx">xRight</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">b</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span>
+
+                <span class="nx">yTop</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span>
+                <span class="nx">yMiddle</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">y</span> <span class="o">+</span> <span class="nx">b</span><span class="p">.</span><span class="nx">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="nx">yBottom</span><span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">y</span> <span class="o">+</span> <span class="nx">b</span><span class="p">.</span><span class="nx">height</span>
+        <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>center</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">o</span><span class="p">.</span><span class="nx">center</span>      <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xCenter</span><span class="p">,</span>   <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yMiddle</span> <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>edges</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">o</span><span class="p">.</span><span class="nx">topLeft</span>     <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xLeft</span><span class="p">,</span>     <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yTop</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">topRight</span>    <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xRight</span><span class="p">,</span>    <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yTop</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">bottomLeft</span>  <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xLeft</span><span class="p">,</span>     <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yBottom</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">bottomRight</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xRight</span><span class="p">,</span>    <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yBottom</span> <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>corners</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">o</span><span class="p">.</span><span class="nx">topLeft</span>     <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xCenter</span><span class="p">,</span>   <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yTop</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">bottom</span>      <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xCenter</span><span class="p">,</span>   <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yBottom</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">left</span>        <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xLeft</span><span class="p">,</span>     <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yMiddle</span> <span class="p">};</span>
+        <span class="nx">o</span><span class="p">.</span><span class="nx">right</span>       <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">xRight</span><span class="p">,</span>    <span class="nx">y</span><span class="o">:</span> <span class="nx">o</span><span class="p">.</span><span class="nx">yMiddle</span> <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>shortcuts to get the offset of paper's canvas</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">o</span><span class="p">.</span><span class="nx">offset</span>      <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">canvas</span><span class="p">).</span><span class="nx">parent</span><span class="p">().</span><span class="nx">offset</span><span class="p">();</span>
+
+        <span class="k">return</span> <span class="nx">o</span><span class="p">;</span>
+    <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <p>Polyline support.</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">Raphael</span><span class="p">.</span><span class="nx">fn</span><span class="p">.</span><span class="nx">polyline</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">poly</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">,</span><span class="nx">x</span><span class="p">,</span><span class="nx">y</span><span class="p">,</span><span class="s1">&#39;L&#39;</span><span class="p">];</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">2</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="nx">arguments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">poly</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">arguments</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">path</span><span class="p">(</span><span class="nx">poly</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">));</span>
+    <span class="p">};</span>
+
+    <span class="kd">var</span> <span class="nx">isNatural</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">number</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">_</span><span class="p">.</span><span class="nx">isNumber</span><span class="p">(</span><span class="nx">number</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">_</span><span class="p">.</span><span class="nb">isFinite</span><span class="p">(</span><span class="nx">number</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">number</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <p>/**
+ * 
+ * @returns {moveStart}
+ */
+ moveStart = function() {
+ if (this.type === "path") {
+ this.odx = 0;
+ this.ody = 0;
+ } else {
+ this.ox = _getX(this);
+ this.oy = _getY(this);
+ // TODO
+ this.animate({ "fill-opacity": 0.2 }, 10);</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <p>_.each(this.controller.inner, function( inner ) {
+ draggerInner(inner);
+ }); <br />
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-10">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-10">&#182;</a>               </div>               <p>if (this.controller.shadow) {
+ this.controller.deleteShadow();
+ }
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-11">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-11">&#182;</a>               </div>               <p>/**
+ * 
+ */
+ draggerInner = function( inner ) {
+ if (inner.wrapper) {
+ var el = inner.wrapper;
+ el.ox = _getX(el);
+ el.oy = _getY(el);
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-12">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-12">&#182;</a>               </div>               <p>if (inner.hidder) {
+ inner.hidder.ox = inner.hidder.attr("x");
+ inner.hidder.oy = inner.hidder.attr("y");
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-13">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-13">&#182;</a>               </div>               <p>_.each(inner.inner, function( sub ) {
+ draggerInner(sub);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-14">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-14">&#182;</a>               </div>               <p>/**
+ * 
+ */
+ moveEnd = function() {
+ this.animate({ "fill-opacity": 1 }, 10); <br />
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-15">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-15">&#182;</a>               </div>               <p>/**
+ * 
+ * @param dx
+ * @param dy
+ * @returns {nodeMove}
+ */
+ nodeMove = function( dx, dy ) {
+ if (this.controller.shadow) {
+ this.controller.deleteShadow();
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-16">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-16">&#182;</a>               </div>               <p>if (this.type === 'path') {
+ this.translate(dx - this.odx, dy - this.ody);
+ this.odx = dx;
+ this.ody = dy;
+ } else {
+ this.attr(_setPositionAttributes(this, dx, dy));</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-17">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-17">&#182;</a>               </div>               <p>_.each(this.controller.selectionAnchors, function(anchor) {
+ anchor.remove();
+ });</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-18">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-18">&#182;</a>               </div>               <p>_.each(this.controller.inner, function(i) {
+ moveInner(i, dx, dy);
+ });
+ }
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-19">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-19">&#182;</a>               </div>               <p>/**
+ * 
+ */
+ moveInner = function( inner, dx, dy ) {
+ var position;
+ if (inner.wrapper) {
+ position = _setPositionAttributes(inner.wrapper, dx, dy);
+ inner.wrapper.attr(position);
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-20">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-20">&#182;</a>               </div>               <p>if (inner.hidder) {
+ position = _setPositionAttributes(inner.hidder, dx, dy);
+ inner.hidder.attr(position);
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-21">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-21">&#182;</a>               </div>               <p>_.each(inner.inner, function(i) {
+ moveInner(i, dx, dy);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-22">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-22">&#182;</a>               </div>               <p>Resize functions.</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-23">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-23">&#182;</a>               </div>               <p>/**
+ * 
+ */
+ resizerDragger = function() {
+ var me;
+ this.ox = this.attr('x');
+ this.oy = this.attr('y');
+ if (this.box.type === 'rect') {
+ this.box.ow = this.box.attr('width');
+ this.box.oh = this.box.attr('height');
+ } else {
+ this.box.or = this.box.attr('r');
+ }
+ me = this;
+ _.each(this.box.controller.selectionAnchors, function(anchor) {
+ if (anchor !== me) {
+ anchor.remove();
+ }
+ });
+ _.each(this.box.controller.inner, function(i) {
+ resizerDraggerInner(i);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-24">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-24">&#182;</a>               </div>               <p>/**
+ * 
+ */
+ resizerDraggerInner = function(inner) {
+ var el;
+ if (inner.resizable) {
+ el = inner.wrapper;
+ el.ow = el.attr('width');
+ el.oh = el.attr('height');
+ }
+ _.each(inner.inner, function(i) {
+ resizerDraggerInner(i);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-25">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-25">&#182;</a>               </div>               <p>resizerMove = function(dx, dy) {
+ var h, r, sqrt, w;
+ this.attr({ x: this.ox + dx, y: this.oy + dy });</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-26">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-26">&#182;</a>               </div>               <p>if (this.box.type === 'rect') {
+ w = this.box.ow + dx;
+ h = this.box.oh + dy;
+ if (!(isNaN(w) || w &lt; 0)) {
+ this.box.attr({ width: w });
+ }
+ if (!(isNaN(h) || h &lt; 0)) {
+ this.box.attr({ height: h });
+ }
+ } else {
+ sqrt = Math.sqrt(2 * dy * dy);
+ r = this.box.or + sqrt;
+ if (!isNaN(r)) {
+ this.box.attr({ r: r });
+ }
+ }
+ _.each(this.box.controller.inner, function(i) {
+ resizerMoveInner(i, dx, dy);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-27">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-27">&#182;</a>               </div>               <p>resizerMoveInner = function(inner, dx, dy) {
+ if (inner.resizable) {
+ var el = inner.wrapper;
+ el.attr({ width: el.ow + dx, height: el.oh + dy });
+ }</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-28">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-28">&#182;</a>               </div>               <p>if (inner instanceof LabelNode) {
+ inner.center(dx, dy);
+ }
+ _.each(inner.inner, function(i) {
+ resizerMoveInner(i, dx, dy);
+ });
+ };</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="cm">/**</span>
+<span class="cm">     * Anchor</span>
+<span class="cm">     */</span>
+    <span class="nx">Anchor</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">box</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">box</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">paper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">paper</span><span class="p">;</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="nx">initialize</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">arguments</span><span class="p">);</span>
+    <span class="p">};</span>
+
+    <span class="nx">Anchor</span><span class="p">.</span><span class="nx">start</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">o</span><span class="p">();</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">o</span><span class="p">();</span>
+
+        <span class="kd">var</span> <span class="nx">current</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">anchor</span><span class="p">;</span>
+        <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">anchor</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">anchor</span> <span class="o">!==</span> <span class="nx">current</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">anchor</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+
+        <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="nx">Anchor</span><span class="p">.</span><span class="nx">startInner</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">};</span>
+
+    <span class="nx">Anchor</span><span class="p">.</span><span class="nx">startInner</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">resizable</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">o</span><span class="p">();</span>
+        <span class="p">}</span>
+
+        <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="nx">Anchor</span><span class="p">.</span><span class="nx">startInner</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">};</span>
+
+    <span class="nx">Anchor</span><span class="p">.</span><span class="nx">move</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">mx</span><span class="p">,</span> <span class="nx">my</span><span class="p">,</span> <span class="nx">ev</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ox</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">y</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">oy</span> <span class="o">+</span> <span class="nx">dy</span> <span class="p">}</span> <span class="p">);</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">resize</span><span class="p">(</span><span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">anchor</span><span class="p">.</span><span class="nx">direction</span><span class="p">);</span>
+    <span class="p">};</span>
+
+    <span class="nx">Anchor</span><span class="p">.</span><span class="nx">end</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">anchor</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">anchor</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">select</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
+
+    <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">Anchor</span><span class="p">.</span><span class="nx">prototype</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">cursor</span><span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{},</span>
+
+        <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">rect</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="nx">attr</span><span class="p">({</span>
+                <span class="nx">fill</span><span class="o">:</span> <span class="s1">&#39;white&#39;</span><span class="p">,</span>
+                <span class="nx">stroke</span><span class="o">:</span> <span class="s1">&#39;rgb(0,0,0)&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;stroke-width&#39;</span><span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s1">&#39;stroke-opacity&#39;</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="nx">opacity</span><span class="o">:</span> <span class="mf">0.3</span><span class="p">,</span>
+                <span class="nx">cursor</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">cursor</span>
+            <span class="p">});</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">box</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">anchor</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">remove</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">Anchor</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+
+    <span class="nx">NorthWestAnchor</span> <span class="o">=</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">bbox</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">x</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">y</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">cursor</span> <span class="o">=</span> <span class="s1">&#39;nw-resize&#39;</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">direction</span> <span class="o">=</span> <span class="s1">&#39;nw&#39;</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">drag</span><span class="p">(</span><span class="nx">Anchor</span><span class="p">.</span><span class="nx">move</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">start</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">end</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">SouthWestAnchor</span> <span class="o">=</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">bbox</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">xLeft</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">yBottom</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">cursor</span> <span class="o">=</span> <span class="s1">&#39;sw-resize&#39;</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">direction</span> <span class="o">=</span> <span class="s1">&#39;sw&#39;</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">drag</span><span class="p">(</span><span class="nx">Anchor</span><span class="p">.</span><span class="nx">move</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">start</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">end</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">NorthEastAnchor</span> <span class="o">=</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">bbox</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">xRight</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">y</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">cursor</span> <span class="o">=</span> <span class="s1">&#39;ne-resize&#39;</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">direction</span> <span class="o">=</span> <span class="s1">&#39;ne&#39;</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">drag</span><span class="p">(</span><span class="nx">Anchor</span><span class="p">.</span><span class="nx">move</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">start</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">end</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">SouthEastAnchor</span> <span class="o">=</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">bbox</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">box</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">xRight</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">bbox</span><span class="p">.</span><span class="nx">yBottom</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">cursor</span> <span class="o">=</span> <span class="s1">&#39;se-resize&#39;</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">direction</span> <span class="o">=</span> <span class="s1">&#39;se&#39;</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">drag</span><span class="p">(</span><span class="nx">Anchor</span><span class="p">.</span><span class="nx">move</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">start</span><span class="p">,</span> <span class="nx">Anchor</span><span class="p">.</span><span class="nx">end</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * </span>
+<span class="cm">     * @returns {Node}</span>
+<span class="cm">     */</span>
+    <span class="nx">Node</span> <span class="o">=</span> <span class="nx">diagram</span><span class="p">.</span><span class="nx">Node</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">properties</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">parent</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">parent</span> <span class="o">||</span> <span class="kc">undefined</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">diagram</span> <span class="o">:</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">diagram</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">paper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">paper</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">properties</span><span class="p">.</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">position</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">position</span><span class="p">;</span>
+        <span class="p">}</span>
+        
+        <span class="k">this</span><span class="p">.</span><span class="nx">initialize</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">arguments</span><span class="p">);</span>
+    <span class="p">};</span>
+
+    <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">Node</span><span class="p">.</span><span class="nx">prototype</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+
+        <span class="nx">draggable</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+
+        <span class="nx">_isElement</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param dx</span>
+<span class="cm">         * @param dy</span>
+<span class="cm">         * @param direction</span>
+<span class="cm">         */</span>
+        <span class="nx">resize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">direction</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">rdxy</span><span class="p">(</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">direction</span> <span class="p">)</span> <span class="p">);</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">inner</span><span class="p">.</span><span class="nx">resize</span><span class="p">(</span><span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">direction</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param func</span>
+<span class="cm">         * @returns {Boolean}</span>
+<span class="cm">         */</span>
+        <span class="nx">canCreate</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">func</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">child</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">c</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">child</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">f</span> <span class="p">)</span> <span class="p">{</span>
+                    <span class="k">return</span> <span class="nx">f</span> <span class="o">===</span> <span class="nx">func</span><span class="p">;</span>
+                <span class="p">});</span>
+                <span class="k">return</span> <span class="nx">c</span> <span class="o">!==</span> <span class="kc">undefined</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param evt</span>
+<span class="cm">         */</span>
+        <span class="nx">createChild</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">evt</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">currentTool</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">tool</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">currentTool</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">canCreate</span><span class="p">(</span><span class="nx">tool</span><span class="p">))</span> <span class="p">{</span>
+                    <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">createChildNode</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">tool</span><span class="p">,</span> <span class="nx">evt</span><span class="p">);</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">render</span><span class="p">();</span>                    
+                <span class="p">}</span>
+                <span class="nx">diagram</span><span class="p">.</span><span class="nx">currentTool</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         */</span>
+        <span class="nx">show</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">resizer</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">resizer</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">inner</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * hide</span>
+<span class="cm">         */</span>
+        <span class="nx">hide</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">hide</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">hide</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">inner</span><span class="p">.</span><span class="nx">hide</span><span class="p">();</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * addInner</span>
+<span class="cm">         * @param node</span>
+<span class="cm">         */</span>
+        <span class="nx">addInner</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">node</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">inner</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">resizer</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">resizer</span><span class="p">.</span><span class="nx">toFront</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">node</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="nx">yourself</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">updateJoints</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">joints</span><span class="p">(),</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">joint</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">joint</span><span class="p">.</span><span class="nx">update</span><span class="p">();</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="nx">joints</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">joints</span><span class="p">();</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param to</span>
+<span class="cm">         * @param connection</span>
+<span class="cm">         * @returns</span>
+<span class="cm">         */</span>
+        <span class="nx">joint</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">to</span><span class="p">,</span> <span class="nx">connection</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">j</span><span class="p">,</span> <span class="nx">toobj</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">connection</span><span class="p">.</span><span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+                <span class="nx">connection</span><span class="p">.</span><span class="nx">target</span> <span class="o">=</span> <span class="nx">to</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nx">toobj</span> <span class="o">=</span> <span class="nx">to</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">?</span> <span class="nx">to</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">:</span> <span class="nx">to</span><span class="p">;</span>
+            <span class="nx">j</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">joint</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">,</span> <span class="p">[</span><span class="nx">toobj</span><span class="p">,</span> <span class="nx">connection</span><span class="p">]);</span>
+            <span class="nx">j</span><span class="p">.</span><span class="nx">registerForever</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">currentAll</span><span class="p">);</span>
+            <span class="k">return</span> <span class="nx">j</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @returns</span>
+<span class="cm">         */</span>
+        <span class="nx">attr</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">Raphael</span><span class="p">.</span><span class="nx">el</span><span class="p">.</span><span class="nx">attr</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">,</span> <span class="nx">arguments</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param x</span>
+<span class="cm">         * @param y</span>
+<span class="cm">         */</span>
+        <span class="nx">move</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">previousX</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+            <span class="kd">var</span> <span class="nx">previousY</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span><span class="nx">x</span><span class="o">:</span> <span class="nx">x</span><span class="p">});</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span><span class="nx">y</span><span class="o">:</span> <span class="nx">y</span><span class="p">});</span>   
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-29">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-29">&#182;</a>               </div>               <p>computes the new child positions 
+according to previous parent positions.</p>             </td>             <td class="code">               <div class="highlight"><pre>                    <span class="kd">var</span> <span class="nx">ix</span> <span class="o">=</span> <span class="nx">inner</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+                    <span class="kd">var</span> <span class="nx">iy</span> <span class="o">=</span> <span class="nx">inner</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+                    <span class="kd">var</span> <span class="nx">dx</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="nx">ix</span> <span class="o">-</span> <span class="nx">previousX</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span>
+                    <span class="kd">var</span> <span class="nx">dy</span> <span class="o">=</span> <span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="nx">iy</span> <span class="o">-</span> <span class="nx">previousY</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span>
+                    <span class="nx">inner</span><span class="p">.</span><span class="nx">move</span><span class="p">(</span> <span class="nx">x</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">);</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * select</span>
+<span class="cm">         */</span>
+        <span class="nx">select</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">anchorBM</span><span class="p">,</span> <span class="nx">anchorLB</span><span class="p">,</span>
+            <span class="nx">anchorLT</span><span class="p">,</span> <span class="nx">anchorRB</span><span class="p">,</span> 
+            <span class="nx">anchorRT</span><span class="p">,</span> <span class="nx">anchorTM</span><span class="p">,</span> 
+            <span class="nx">bbox</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">shadow</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">createShadow</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">selected</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">selected</span><span class="p">.</span><span class="nx">deselect</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">selected</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">bbox</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span> <span class="o">=</span> <span class="p">[];</span>
+
+                <span class="nx">anchorRT</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NorthEastAnchor</span><span class="p">({</span> <span class="nx">box</span><span class="o">:</span> <span class="k">this</span> <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+                <span class="nx">anchorLT</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NorthWestAnchor</span><span class="p">({</span> <span class="nx">box</span><span class="o">:</span> <span class="k">this</span> <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+                <span class="nx">anchorLB</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SouthWestAnchor</span><span class="p">({</span> <span class="nx">box</span><span class="o">:</span> <span class="k">this</span> <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+                <span class="nx">anchorRB</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SouthEastAnchor</span><span class="p">({</span> <span class="nx">box</span><span class="o">:</span> <span class="k">this</span> <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">resizable</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">anchorRT</span><span class="p">.</span><span class="nx">resizable</span><span class="p">();</span>
+                    <span class="nx">anchorLT</span><span class="p">.</span><span class="nx">resizable</span><span class="p">();</span>
+                    <span class="nx">anchorRB</span><span class="p">.</span><span class="nx">resizable</span><span class="p">();</span>
+                    <span class="nx">anchorLB</span><span class="p">.</span><span class="nx">resizable</span><span class="p">();</span>
+                <span class="p">}</span>
+
+                <span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">anchorLT</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">anchorRT</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">anchorLB</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">anchorRB</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-30">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-30">&#182;</a>               </div>               <pre><code>         this.selectionAnchors.push(anchorTM);
+         this.selectionAnchors.push(anchorBM);
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * deselect</span>
+<span class="cm">         */</span>
+        <span class="nx">deselect</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">selected</span> <span class="o">=</span> <span class="k">void</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">anchor</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">anchor</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * remove</span>
+<span class="cm">         */</span>
+        <span class="nx">remove</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">joints</span><span class="p">(),</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">joint</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">joint</span><span class="p">.</span><span class="nx">freeJoint</span><span class="p">(</span> <span class="nx">joint</span><span class="p">.</span><span class="nx">startObject</span><span class="p">()</span> <span class="p">);</span>
+                <span class="nx">joint</span><span class="p">.</span><span class="nx">freeJoint</span><span class="p">(</span> <span class="nx">joint</span><span class="p">.</span><span class="nx">endObject</span><span class="p">()</span> <span class="p">);</span>
+                <span class="nx">joint</span><span class="p">.</span><span class="nx">clean</span><span class="p">([</span><span class="s2">&quot;connection&quot;</span><span class="p">,</span> <span class="s2">&quot;startCap&quot;</span><span class="p">,</span> <span class="s2">&quot;endCap&quot;</span><span class="p">,</span> <span class="s2">&quot;handleStart&quot;</span><span class="p">,</span> <span class="s2">&quot;handleEnd&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">]);</span>
+                <span class="nx">joint</span><span class="p">.</span><span class="nx">unregister</span><span class="p">(</span><span class="nx">node</span><span class="p">);</span>
+            <span class="p">});</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">nner</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">});</span>
+
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">selectionAnchors</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">anchor</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">anchor</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">});</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span> <span class="k">this</span> <span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param options</span>
+<span class="cm">         * @returns {Node}</span>
+<span class="cm">         */</span>
+        <span class="nx">_draggable</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">options</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">start</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">o</span><span class="p">();</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">deselect</span><span class="p">();</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">start</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">inner</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">);</span>
+                    <span class="p">});</span>
+                <span class="p">}</span>
+            <span class="p">};</span>
+
+            <span class="kd">var</span> <span class="nx">move</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">mx</span><span class="p">,</span> <span class="nx">my</span><span class="p">,</span> <span class="nx">ev</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">b</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-31">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-31">&#182;</a>               </div>               <pre><code>         var px = mx - b.offset.left;
+         var py = my - b.offset.top; 
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ox</span> <span class="o">+</span> <span class="nx">dx</span><span class="p">;</span>
+                <span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">oy</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">;</span>
+                <span class="kd">var</span> <span class="nx">r</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;circle&#39;</span><span class="p">)</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;ellipse&#39;</span><span class="p">)</span> <span class="o">?</span> <span class="nx">b</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span> 
+
+                <span class="nx">x</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span>
+                        <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nx">r</span><span class="p">,</span> <span class="nx">x</span><span class="p">),</span>
+                        <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">width</span> <span class="o">-</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;circle&#39;</span><span class="p">)</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;ellipse&#39;</span><span class="p">)</span> <span class="o">?</span> <span class="nx">r</span> <span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">width</span><span class="p">));</span>
+                <span class="nx">y</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span>
+                        <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nx">r</span><span class="p">,</span> <span class="nx">y</span><span class="p">),</span>
+                        <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">height</span> <span class="o">-</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;circle&#39;</span><span class="p">)</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;ellipse&#39;</span><span class="p">)</span> <span class="o">?</span> <span class="nx">r</span> <span class="o">:</span> <span class="nx">b</span><span class="p">.</span><span class="nx">height</span><span class="p">));</span>
+
+                <span class="kd">var</span> <span class="nx">position</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="o">:</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">cx</span><span class="o">:</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">cy</span><span class="o">:</span> <span class="nx">y</span> <span class="p">};</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="nx">position</span><span class="p">);</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">move</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">i</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">,</span> <span class="p">[</span><span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">mx</span><span class="p">,</span> <span class="nx">my</span><span class="p">,</span> <span class="nx">ev</span><span class="p">]);</span>
+                    <span class="p">});</span>
+                <span class="p">}</span>
+            <span class="p">};</span>
+
+            <span class="kd">var</span> <span class="nx">end</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">select</span><span class="p">();</span>
+            <span class="p">};</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">drag</span><span class="p">(</span><span class="nx">move</span><span class="p">,</span> <span class="nx">start</span><span class="p">,</span> <span class="nx">end</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+
+    <span class="nx">Node</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * </span>
+<span class="cm">     * @param parent</span>
+<span class="cm">     * @param properties</span>
+<span class="cm">     * @returns {diagram.LabelNode}</span>
+<span class="cm">     */</span>
+    <span class="nx">LabelNode</span> <span class="o">=</span> <span class="nx">diagram</span><span class="p">.</span><span class="nx">LabelNode</span> <span class="o">=</span> <span class="nx">Node</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+        
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">position</span> <span class="o">=</span> <span class="s1">&#39;center&#39;</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">resizable</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">resizable</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">draggable</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">draggable</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">editable</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">editable</span> <span class="o">||</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>            
+        <span class="p">},</span>
+
+        <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">bBox</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getBBox</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">text</span><span class="p">(</span><span class="nx">bBox</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">y</span> <span class="o">+</span> <span class="mi">12</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">text</span><span class="p">).</span><span class="nx">attr</span><span class="p">({</span>
+                <span class="nx">fill</span><span class="o">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;font-size&#39;</span><span class="o">:</span> <span class="mi">12</span>
+            <span class="p">});</span>
+
+            <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">case</span> <span class="s1">&#39;center&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="p">(</span><span class="nx">bBox</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="p">});</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="s1">&#39;left&#39;</span><span class="o">:</span>
+                <span class="kd">var</span> <span class="nx">tBox</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getBBox</span><span class="p">();</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span> <span class="nx">x</span><span class="o">:</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="p">(</span><span class="nx">tBox</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="p">});</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">default</span><span class="o">:</span>
+                <span class="nx">x</span> <span class="o">=</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="p">(</span><span class="nx">bBox</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">toFront</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">controller</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">editable</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">asEditable</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">resize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">dx</span><span class="p">,</span> <span class="nx">dy</span><span class="p">,</span> <span class="nx">direction</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> 
+            <span class="nx">bBox</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">(),</span> 
+            <span class="nx">tbb</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">getABox</span><span class="p">();</span>
+
+            <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">case</span> <span class="s1">&#39;center&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">xCenter</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="s1">&#39;left&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="p">(</span><span class="nx">tbb</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">default</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="nx">bBox</span><span class="p">.</span><span class="nx">xCenter</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;nw&#39;</span> <span class="o">||</span> <span class="nx">direction</span> <span class="o">===</span> <span class="s1">&#39;ne&#39;</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-32">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-32">&#182;</a>               </div>               <pre><code>         console.log(dy, tbb.y, this.wrapper.oy);
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">oy</span> <span class="o">+</span> <span class="nx">dy</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="nx">getTextPosition</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">pos</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">properties</span><span class="p">.</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">pos</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">position</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">pos</span><span class="p">.</span><span class="nx">x</span> <span class="o">&amp;&amp;</span> <span class="nx">pos</span><span class="p">.</span><span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="nx">x</span><span class="o">:</span> <span class="nx">pos</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span>
+                        <span class="nx">y</span><span class="o">:</span> <span class="nx">pos</span><span class="p">.</span><span class="nx">y</span>
+                    <span class="p">};</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="nx">x</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span>
+                <span class="nx">y</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">y</span>
+            <span class="p">};</span>
+        <span class="p">},</span>
+
+        <span class="nx">setText</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">text</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="nx">text</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">text</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">center</span><span class="p">();</span>
+        <span class="p">},</span>
+
+        <span class="nx">getText</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">text</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">asEditable</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="nx">node</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">ml</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">modifiedLabel</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">ml</span> <span class="o">&amp;&amp;</span> <span class="nx">ml</span> <span class="o">!==</span> <span class="nx">node</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">$</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">inputText</span><span class="p">).</span><span class="nx">remove</span><span class="p">();</span>
+                    <span class="nx">$</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">modifiedLabel</span><span class="p">.</span><span class="nx">textForm</span><span class="p">).</span><span class="nx">remove</span><span class="p">();</span>
+                <span class="p">}</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">textForm</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">$</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">textForm</span><span class="p">).</span><span class="nx">remove</span><span class="p">();</span>
+                <span class="p">}</span>
+
+                <span class="kd">var</span> <span class="nx">el</span> <span class="o">=</span> <span class="nx">_createInputTextForm</span><span class="p">(</span> <span class="nx">node</span> <span class="p">);</span>
+
+                <span class="nx">node</span><span class="p">.</span><span class="nx">textForm</span> <span class="o">=</span> <span class="nx">el</span><span class="p">.</span><span class="nx">form</span><span class="p">;</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">inputText</span> <span class="o">=</span> <span class="nx">el</span><span class="p">.</span><span class="nx">input</span><span class="p">;</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">modifiedLabel</span> <span class="o">=</span> <span class="nx">node</span><span class="p">;</span>
+
+                <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;diagram&#39;</span><span class="p">).</span><span class="nx">appendChild</span><span class="p">(</span><span class="nx">el</span><span class="p">.</span><span class="nx">form</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * private</span>
+<span class="cm">     * </span>
+<span class="cm">     * @param node</span>
+<span class="cm">     * @returns</span>
+<span class="cm">     */</span>
+    <span class="nx">_createInputTextForm</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">node</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">px</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">canvas</span><span class="p">.</span><span class="nx">offsetLeft</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">py</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">canvas</span><span class="p">.</span><span class="nx">offsetTop</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nx">px</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nx">py</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">w</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;width&#39;</span><span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">h</span> <span class="o">=</span> <span class="mi">20</span><span class="p">;</span>
+
+        <span class="kd">var</span> <span class="nx">txt</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">textForm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s1">&#39;form&#39;</span><span class="p">);</span>
+        <span class="nx">txt</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;style&#39;</span><span class="p">,</span> <span class="s1">&#39;position: absolute; left: &#39;</span> <span class="o">+</span> <span class="nx">x</span> <span class="o">+</span> <span class="s1">&#39;px; top: &#39;</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="s1">&#39;px;&#39;</span><span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">inputForm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">);</span>
+        <span class="nx">inputForm</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">);</span>
+        <span class="nx">inputForm</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;placeholder&#39;</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">text</span><span class="p">);</span>
+        <span class="nx">inputForm</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;style&#39;</span><span class="p">,</span> <span class="s1">&#39;width:&#39;</span> <span class="o">+</span> <span class="nx">w</span> <span class="o">+</span> <span class="s1">&#39;px; height: &#39;</span> <span class="o">+</span> <span class="nx">h</span> <span class="o">+</span> <span class="s1">&#39;px;&#39;</span><span class="p">);</span>
+        <span class="nx">txt</span><span class="p">.</span><span class="nx">appendChild</span><span class="p">(</span><span class="nx">inputForm</span><span class="p">);</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="nx">form</span><span class="o">:</span> <span class="nx">txt</span><span class="p">,</span>
+            <span class="nx">input</span><span class="o">:</span> <span class="nx">inputForm</span>
+        <span class="p">};</span>
+    <span class="p">};</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * FigureNode</span>
+<span class="cm">     */</span>
+    <span class="nx">FigureNode</span> <span class="o">=</span> <span class="nx">diagram</span><span class="p">.</span><span class="nx">FigureNode</span> <span class="o">=</span> <span class="nx">Node</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+        <span class="nx">resizable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">draggable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">shadow</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">shadow</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">shadowAttrs</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="nx">stroke</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> 
+                    <span class="nx">fill</span><span class="o">:</span> <span class="s1">&#39;#999&#39;</span><span class="p">,</span> 
+                    <span class="nx">translation</span><span class="o">:</span> <span class="s1">&#39;7,7&#39;</span><span class="p">,</span>
+                    <span class="nx">opacity</span><span class="o">:</span> <span class="mf">0.5</span>
+            <span class="p">};</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">addNode</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * Create a shadow.</span>
+<span class="cm">         * @private</span>
+<span class="cm">         */</span>
+        <span class="nx">createShadow</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">deleteShadow</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">glow</span><span class="p">({</span><span class="nx">width</span><span class="o">:</span> <span class="mi">3</span><span class="p">,</span> <span class="nx">fill</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="nx">offsetx</span><span class="o">:</span> <span class="mi">3</span><span class="p">,</span> <span class="nx">offsety</span><span class="o">:</span> <span class="mi">3</span><span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * Delete shadow.</span>
+<span class="cm">         * @private</span>
+<span class="cm">         */</span>
+        <span class="nx">deleteShadow</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * Handle Element during a move.</span>
+<span class="cm">         * @private</span>
+<span class="cm">         */</span>
+        <span class="nx">moving</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">shadowElement</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="nx">_rect</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">rect</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> 
+                    <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">radius</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="nx">_circle</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">circle</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> 
+                    <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">radius</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="nx">_ellipse</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">ellipse</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> 
+                    <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">rx</span><span class="p">,</span> 
+                    <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">ry</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="nx">_path</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">path</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">path</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">);</span>
+        <span class="p">},</span>
+
+        <span class="nx">createLabel</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">labelNode</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">LabelNode</span><span class="p">({</span> <span class="nx">parent</span><span class="o">:</span> <span class="k">this</span><span class="p">,</span> <span class="nx">text</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="p">});</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">labelNode</span><span class="p">.</span><span class="nx">render</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">addInner</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">labelNode</span><span class="p">);</span>
+        <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-33">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-33">&#182;</a>               </div>               <pre><code>   addDragger: function() {
+       this.wrapper.drag(nodeMove, moveStart, moveEnd);
+   },
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">compartments</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="p">[];</span>
+            <span class="p">}</span>   
+            <span class="k">return</span> <span class="nx">_</span><span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span> 
+                <span class="k">return</span> <span class="nx">inner</span> <span class="k">instanceof</span> <span class="nx">BasicCompartment</span><span class="p">;</span> 
+            <span class="p">});</span>
+        <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-34">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-34">&#182;</a>               </div>               <p>Resize child compartments. This function is called when a new 
+element is added to a compartment via the function addInner(). </p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="cm">/**</span>
+<span class="cm">         * @private</span>
+<span class="cm">         */</span>
+        <span class="nx">resizeCompartments</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">compartments</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">compartments</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-35">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-35">&#182;</a>               </div>               <p>Computes current height of compartments.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="nx">compartments</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">memo</span><span class="p">,</span> <span class="nx">cpt</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nx">memo</span> <span class="o">+</span> <span class="nx">cpt</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+            <span class="p">},</span> <span class="mi">0</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-36">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-36">&#182;</a>               </div>               <p>For each compartments, call resize(), and 
+computes the new y position of the next compartment.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">compartments</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">cpt</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">cpt</span><span class="p">.</span><span class="nx">_resize</span><span class="p">();</span>
+                <span class="kd">var</span> <span class="nx">idx</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="nx">compartments</span><span class="p">,</span> <span class="nx">cpt</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-37">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-37">&#182;</a>               </div>               <p>Reposition next compartment</p>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="k">if</span> <span class="p">((</span><span class="nx">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nx">compartments</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="kd">var</span> <span class="nx">next</span> <span class="o">=</span> <span class="nx">compartments</span><span class="p">[</span><span class="nx">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+                    <span class="kd">var</span> <span class="nx">nextY</span> <span class="o">=</span> <span class="nx">next</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+                    <span class="kd">var</span> <span class="nx">currentY</span> <span class="o">=</span> <span class="nx">cpt</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nx">cpt</span><span class="p">.</span><span class="nx">height</span><span class="p">();</span> <span class="c1">//attr(&#39;height&#39;);</span>
+                    <span class="kd">var</span> <span class="nx">diff</span> <span class="o">=</span> <span class="nx">currentY</span> <span class="o">-</span> <span class="nx">nextY</span><span class="p">;</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">next</span><span class="p">.</span><span class="nx">move</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">currentY</span><span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-38">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-38">&#182;</a>               </div>               <p>Computes new height of compartments.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">var</span> <span class="nx">newHeight</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="nx">compartments</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">memo</span><span class="p">,</span> <span class="nx">cpt</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nx">memo</span> <span class="o">+</span> <span class="nx">cpt</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+            <span class="p">},</span> <span class="mi">0</span><span class="p">);</span>
+
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">newHeight</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-39">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-39">&#182;</a>               </div>               <p>If compartments height has increased, increase Node height
+accordingly.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">var</span> <span class="nx">diff</span> <span class="o">=</span> <span class="nx">newHeight</span> <span class="o">-</span> <span class="nx">height</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">previousHeight</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span> <span class="nx">height</span><span class="o">:</span> <span class="nx">previousHeight</span> <span class="o">+</span> <span class="nx">diff</span> <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-40">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-40">&#182;</a>               </div>               <p>The render() function will create the Raphael element, initialize the inner
+elements and call their render() method. This function also make the Raphael element
+draggable if option set to true and handle click event on the element.</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="cm">/**</span>
+<span class="cm">         * Render function.</span>
+<span class="cm">         * @public</span>
+<span class="cm">         * @returns {FigureNode}</span>
+<span class="cm">         */</span>
+        <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Paper has not been initialized&#39;</span><span class="p">);</span>
+            <span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-41">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-41">&#182;</a>               </div>               <p>Creates the Raphael Element according to the type of figure.
+The Element is attach to the FigureNode via the property wrapper.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">switch</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">case</span> <span class="s1">&#39;rect&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_rect</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="s1">&#39;circle&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_circle</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="s1">&#39;ellipse&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_ellipse</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="s1">&#39;path&#39;</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_path</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">default</span><span class="o">:</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Cannot create figure&#39;</span><span class="p">);</span>
+            <span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-42">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-42">&#182;</a>               </div>               <p>FigureNode is accessible from the wrapper via the property controller.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">controller</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span></pre></div>             </td>           </tr>                               <tr id="section-43">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-43">&#182;</a>               </div>               <p>Creates Label if text element is present.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">createLabel</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">child</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">child</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-44">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-44">&#182;</a>               </div>               <p>Initializes child elements and call render() on each of them.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">var</span> <span class="nx">thisNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">children</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">child</span><span class="p">)</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">child</span> <span class="o">:</span> <span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">child</span><span class="p">];</span>
+            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">children</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">child</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">child</span><span class="p">.</span><span class="nx">parent</span> <span class="o">=</span> <span class="nx">thisNode</span><span class="p">;</span>
+                <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">child</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span> <span class="nx">child</span> <span class="p">);</span>
+                <span class="nx">thisNode</span><span class="p">.</span><span class="nx">addInner</span><span class="p">(</span><span class="nx">node</span><span class="p">);</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">render</span><span class="p">();</span>
+            <span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-45">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-45">&#182;</a>               </div>               <p>Creates shadow if shadow element is set to true.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">shadow</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">createShadow</span><span class="p">();</span>
+            <span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-46">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-46">&#182;</a>               </div>               <p>Make the element draggable if draggable is set to true.
+FigureNode is draggable by default.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">draggable</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">_draggable</span><span class="p">();</span>
+            <span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-47">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-47">&#182;</a>               </div>               <p>Handle click event.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">diagram</span><span class="p">;</span></pre></div>             </td>           </tr>                               <tr id="section-48">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-48">&#182;</a>               </div>               <p>Display selection box and resize anchors.</p>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">select</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-49">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-49">&#182;</a>               </div>               <p>Handle the connection to other nodes.</p>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="nx">diagram</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">.</span><span class="nx">diagram</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">diagram</span><span class="p">.</span><span class="nx">canConnect</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">))</span> <span class="p">{</span>
+                    <span class="nx">diagram</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">controller</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param x</span>
+<span class="cm">         * @param y</span>
+<span class="cm">         */</span>
+        <span class="nx">scale</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">scale</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * Connection</span>
+<span class="cm">     * </span>
+<span class="cm">     * @returns {Connection}</span>
+<span class="cm">     */</span>
+    <span class="nx">Connection</span> <span class="o">=</span> <span class="nx">diagram</span><span class="p">.</span><span class="nx">Connection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{};</span>
+
+    <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">Connection</span><span class="p">.</span><span class="nx">prototype</span><span class="p">,</span> <span class="p">{</span>
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param src</span>
+<span class="cm">         * @param tgt</span>
+<span class="cm">         * @returns {Joint}</span>
+<span class="cm">         */</span>
+        <span class="nx">connect</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">src</span><span class="p">,</span> <span class="nx">tgt</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">source</span> <span class="o">=</span> <span class="nx">src</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">target</span> <span class="o">=</span> <span class="nx">tgt</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">joint</span> <span class="o">=</span> <span class="nx">src</span><span class="p">.</span><span class="nx">joint</span><span class="p">(</span><span class="nx">tgt</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">endArrow</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">endArrow</span><span class="p">,</span>
+                <span class="nx">startArrow</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">startArrow</span><span class="p">,</span>
+                <span class="nx">attrs</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">attrs</span>
+            <span class="p">});</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">joint</span><span class="p">.</span><span class="nx">_connection</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">joint</span><span class="p">;</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * </span>
+<span class="cm">     * @param parent</span>
+<span class="cm">     * @param properties</span>
+<span class="cm">     * @returns {BasicCompartment}</span>
+<span class="cm">     */</span>
+    <span class="nx">BasicCompartment</span> <span class="o">=</span> <span class="nx">diagram</span><span class="p">.</span><span class="nx">BasicCompartment</span> <span class="o">=</span> <span class="nx">Node</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span> 
+
+        <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">properties</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">figure</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">figure</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">resizable</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">resizable</span> <span class="o">||</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">draggable</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">draggable</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">layout</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">layout</span> <span class="o">||</span> <span class="s1">&#39;none&#39;</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">properties</span><span class="p">.</span><span class="nx">child</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">child</span> <span class="o">=</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">child</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * </span>
+<span class="cm">         * @returns {BasicCompartment}</span>
+<span class="cm">         */</span>
+        <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">figure</span><span class="p">,</span> <span class="nx">node</span><span class="p">;</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">position</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="nx">x</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
+                    <span class="nx">y</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">top</span>
+            <span class="p">};</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">width</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;width&#39;</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span> <span class="o">||</span> <span class="mi">10</span><span class="p">;</span> 
+            <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">;</span>
+
+            <span class="nx">figure</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">figure</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">figure</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s2">&quot;rect&quot;</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">rect</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> 
+                        <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span> 
+                        <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">attr</span><span class="p">).</span><span class="nx">attr</span><span class="p">({</span><span class="nx">fill</span><span class="o">:</span> <span class="s1">&#39;blue&#39;</span><span class="p">});</span>
+            <span class="p">}</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">controller</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span> 
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_addHidder</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">hidden</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+            <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">hidden</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">return</span> <span class="nx">node</span><span class="p">.</span><span class="nx">_show</span><span class="p">();</span>
+                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                    <span class="k">return</span> <span class="nx">node</span><span class="p">.</span><span class="nx">_hide</span><span class="p">();</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">resizer</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">resizer</span><span class="p">.</span><span class="nx">toFront</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span> <span class="nx">evt</span> <span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">createChild</span><span class="p">(</span> <span class="nx">evt</span> <span class="p">);</span>
+            <span class="p">});</span>
+
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="cm">/**</span>
+<span class="cm">         * called before render().</span>
+<span class="cm">         * </span>
+<span class="cm">         * @param node</span>
+<span class="cm">         * @returns</span>
+<span class="cm">         */</span>
+        <span class="nx">addInner</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">node</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">inner</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">toFront</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">layout</span> <span class="o">===</span> <span class="s1">&#39;stack&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">width</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;width&#39;</span><span class="p">);</span>
+                <span class="kd">var</span> <span class="nx">last</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">last</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">);</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">last</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="nx">last</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">y</span><span class="p">);</span>
+                    <span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span> <span class="o">+</span> <span class="nx">last</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+                <span class="p">}</span>
+
+                <span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">node</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">resizeCompartments</span><span class="p">();</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">node</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="nx">_resize</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">();</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">height</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span> <span class="nx">height</span><span class="o">:</span> <span class="nx">height</span> <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-50">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-50">&#182;</a>               </div>               <p>Computes the height of inner elements.</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">height</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">computed</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">memo</span><span class="p">,</span> <span class="nx">inner</span> <span class="p">)</span> <span class="p">{</span>
+                    <span class="k">return</span> <span class="nx">memo</span> <span class="o">+</span> <span class="nx">inner</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span><span class="p">;</span>
+                <span class="p">},</span> <span class="mi">0</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">height</span><span class="p">,</span> <span class="nx">computed</span><span class="p">);</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">height</span> <span class="o">&gt;=</span> <span class="nx">computed</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">return</span> <span class="nx">height</span><span class="p">;</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="k">return</span> <span class="nx">computed</span><span class="p">;</span>  
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">)</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="nx">_addHidder</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">startX</span><span class="p">,</span> <span class="nx">startY</span><span class="p">;</span>
+            <span class="nx">startX</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">;</span>
+            <span class="nx">startY</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span> <span class="o">+</span> <span class="mi">2</span><span class="p">;</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">paper</span><span class="p">.</span><span class="nx">rect</span><span class="p">(</span><span class="nx">startX</span><span class="p">,</span> <span class="nx">startY</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="nx">attr</span><span class="p">({</span>
+                <span class="nx">fill</span><span class="o">:</span> <span class="s1">&#39;whitesmoke&#39;</span><span class="p">,</span>
+                <span class="nx">stroke</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span>
+            <span class="p">});</span>
+        <span class="p">},</span>
+
+        <span class="nx">_hide</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">currentY</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">);</span>
+            <span class="nx">currentHeight</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-51">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-51">&#182;</a>               </div>               <pre><code>     this.wrapper.attr({ x: currentX });
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-52">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-52">&#182;</a>               </div>               <pre><code>     this.wrapper.attr({
+     y: currentY + (currentHeight - 12)
+     });
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-53">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-53">&#182;</a>               </div>               <p>Reset the height to its original state.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">this</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span> <span class="nx">height</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">height</span> <span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-54">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-54">&#182;</a>               </div>               <pre><code>     currentY = this.hidder.attr('y');
+     this.hidder.attr({  y: currentY + (currentHeight - 12) });
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-55">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-55">&#182;</a>               </div>               <p>Hides its content.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">inner</span><span class="p">.</span><span class="nx">hide</span><span class="p">();</span>
+            <span class="p">});</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">positionNextCompartments</span><span class="p">();</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">hidden</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-56">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-56">&#182;</a>               </div>               <p>Show the compartment content when hidder is clicked.</p>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="nx">_show</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">position</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="nx">x</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
+                    <span class="nx">y</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">wrapper</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">figure</span><span class="p">.</span><span class="nx">top</span>
+            <span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-57">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-57">&#182;</a>               </div>               <p>compartment height is determined by its content height.
+this.figure.height = this.parent.wrapper.attr('height') - this.figure.top;
+this.wrapper.attr({ y: this.position.y });
+this.wrapper.attr({ height: this.figure.height });</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">this</span><span class="p">.</span><span class="nx">resize</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-58">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-58">&#182;</a>               </div>               <p>this.hidder.attr({ y: this.position.y + 2 });</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="k">this</span><span class="p">.</span><span class="nx">positionNextCompartments</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-59">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-59">&#182;</a>               </div>               <p>Shows its content.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="nx">_</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">inner</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">inner</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">inner</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+            <span class="p">});</span>
+
+            <span class="k">this</span><span class="p">.</span><span class="nx">hidder</span><span class="p">.</span><span class="nx">hidden</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">},</span>
+
+        <span class="nx">positionNextCompartments</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-60">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-60">&#182;</a>               </div>               <p>For each next compartments, reset their y position according
+to the previous compartment y position and height.</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">var</span> <span class="nx">compartments</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parent</span><span class="p">.</span><span class="nx">compartments</span><span class="p">();</span>
+            <span class="kd">var</span> <span class="nx">idx</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="nx">compartments</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+            <span class="k">for</span> <span class="p">(</span> <span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="nx">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">compartments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">next</span> <span class="o">=</span> <span class="nx">compartments</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+                <span class="kd">var</span> <span class="nx">previous</span> <span class="o">=</span> <span class="nx">compartments</span><span class="p">[</span><span class="nx">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
+                <span class="kd">var</span> <span class="nx">newY</span> <span class="o">=</span> <span class="nx">previous</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nx">previous</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">);</span>
+                <span class="nx">next</span><span class="p">.</span><span class="nx">attr</span><span class="p">({</span><span class="nx">y</span><span class="o">:</span> <span class="nx">newY</span><span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">LabelNode</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+    <span class="nx">FigureNode</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+    <span class="nx">BasicCompartment</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+    <span class="nx">Connection</span><span class="p">.</span><span class="nx">extend</span> <span class="o">=</span> <span class="nx">extend</span><span class="p">;</span>
+
+<span class="p">}).</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

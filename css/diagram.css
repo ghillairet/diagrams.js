@@ -1,0 +1,202 @@
+#main, .palette {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+[draggable=true] {
+    -khtml-user-drag: element;
+}
+
+.icon-menu {
+
+}
+
+.scrollable {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.palette {
+    position: absolute;
+    top: 60px;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    width: auto;
+    z-index: 1;
+    background: none;
+}
+
+.palette-header {
+    background-image: -moz-linear-gradient( top, #fff, #efefef );
+    background-image: -webkit-gradient(
+        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
+    );
+    background-image: linear-gradient(top, white, #EFEFEF);
+    width: auto;
+    height: 20px;
+    cursor: move;
+}
+
+.palette-header h1 {
+    font-size: 12px;
+    line-height: 0px;
+}
+
+.palette-groups {
+    background: whitesmoke;
+}
+
+.property-box {
+    position: absolute;
+    top: 60px;
+    bottom: 0;
+    left: 0;
+    height: 200px;
+    width: 340px;
+    z-index: 1;
+    border-width: 1px;
+    border-color: whiteSmoke;
+    border-style: solid;
+    box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
+    -webkit-box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
+    -moz-box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
+}
+
+.property-box-body {
+   background: white;
+   height: 180px;
+}
+
+.property-box-header {
+    background-image: -moz-linear-gradient( top, #fff, #efefef );
+    background-image: -webkit-gradient(
+        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
+    );
+    background-image: linear-gradient(top, white, #EFEFEF);
+    width: auto;
+    height: 20px;
+    cursor: move;
+}
+
+.accordion-group {
+    border-radius: 0px;
+    line-height: 4px;
+}
+
+.accordion-heading {
+    background-image: -moz-linear-gradient( top, #fff, #efefef );
+    background-image: -webkit-gradient(
+        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
+    );
+    background-image: linear-gradient(top, white, #EFEFEF);
+    width: auto;
+    height: 20px;
+}
+
+.accordion-heading a {
+    color: grey;
+    font-size: 12px;
+}
+
+.tool-box-slider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    width: auto;
+}
+
+.tool-box-slider .panel {
+    background: #F2F2F2;
+    position: relative;
+    border-bottom: #444 solid 2px;
+}
+
+.grid-overlay {
+  content: "";
+  position: fixed;
+
+  background-color: rgba(34,102,153,0.5);
+   background: -webkit-linear-gradient(skyblue 2px, transparent 2px),
+               -webkit-linear-gradient(0, skyblue 2px, transparent 2px),
+               -webkit-linear-gradient(skyblue 1px, transparent 1px),
+               -webkit-linear-gradient(0, skyblue 1px, transparent 1px);
+   background: -moz-linear-gradient(skyblue 1px, transparent 1px),
+               -moz-linear-gradient(0pt 50% , skyblue 1px, transparent 1px),
+               -moz-linear-gradient(skyblue 1px, transparent 1px),
+               -moz-linear-gradient(0pt 50% , skyblue 1px, transparent 1px);
+   background: linear-gradient(skyblue 2px, transparent 2px),
+               linear-gradient(0, skyblue 2px, transparent 2px),
+               linear-gradient(skyblue 1px, transparent 1px),
+               linear-gradient(0, skyblue 1px, transparent 1px);
+   background-size: 50px 50px,
+                    50px 50px,
+                    10px 10px,
+                    10px 10px ;
+   background-position: -2px -2px,
+                        -2px -2px,
+                        -1px -1px,
+                        -1px -1px ;
+
+/*
+  background-color: rgba(34,102,153,0.5);
+
+  background:
+    -webkit-linear-gradient(#88CFEC 2px, transparent 2px),
+    -webkit-linear-gradient(0, #88CFEC 2px, transparent 2px),
+    -webkit-linear-gradient(#88CFEC 1px, transparent 1px),
+    -webkit-linear-gradient(0, #88CFEC 1px, transparent 1px);
+
+  background:
+    -moz-linear-gradient(#88CFEC 2px, transparent 2px),
+    -moz-linear-gradient(0, #88CFEC 2px, transparent 2px),
+    -moz-linear-gradient(#88CFEC 1px, transparent 1px),
+    -moz-linear-gradient(0, #88CFEC 1px, transparent 1px);
+  background:
+    -o-linear-gradient(#88CFEC 2px, transparent 2px),
+    -o-linear-gradient(0, #88CFEC 2px, transparent 2px),
+    -o-linear-gradient(#88CFEC 1px, transparent 1px),
+    -o-linear-gradient(0, #88CFEC 1px, transparent 1px);
+  background:
+    -ms-linear-gradient(#88CFEC 2px, transparent 2px),
+    -ms-linear-gradient(0, #88CFEC 2px, transparent 2px),
+    -ms-linear-gradient(#88CFEC 1px, transparent 1px),
+    -ms-linear-gradient(0, #88CFEC 1px, transparent 1px);
+  background:
+    linear-gradient(#88CFEC 2px, transparent 2px),
+    linear-gradient(0, #88CFEC 2px, transparent 2px),
+    linear-gradient(#88CFEC 1px, transparent 1px),
+    linear-gradient(0, #88CFEC 1px, transparent 1px);     */
+
+/*  -webkit-background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  -moz-background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+
+  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+*/
+  z-index: -1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.palette-tool {
+}
+
+[class^="icon-tool-"], [class*=" icon-tool-"] {
+    background-position: center center;
+    height: 14px;
+    line-height: 14px;
+    width: 14px;
+    background-repeat: no-repeat;
+}
