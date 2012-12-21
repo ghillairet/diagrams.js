@@ -1,7 +1,7 @@
 // PropertyBox
 //
 
-var PropertyBox = Diagram.PropertyBox = function( attributes ) {
+var PropertyBox = Ds.PropertyBox = function( attributes ) {
     attributes || (attributes = {});
     this.diagram = attributes.diagram;
     this.x = attributes.x;
@@ -90,5 +90,5 @@ PropertyBox.prototype.remove = function() {
     }
 };
 
-Diagram.ToolBox.propertyBox = PropertyBox;
+Ds.ToolBox.propertyBox = PropertyBox;
 

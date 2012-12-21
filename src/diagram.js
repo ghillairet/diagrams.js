@@ -1,525 +1,309 @@
-/**
- * Diagram
- *
- * @namespace Diagram
- * @constructor
- *
-**/
-Diagram.Diagram = function( el, width, height, attributes ) {
-    attributes || (attributes = {});
 
-    this._el = el;
-    this.width = width || document.getElementById(el).style.width;
-    this.height = height || document.getElementById(el).style.height;
-
-    this.attributes = {
-        name: '',
-        type: '',
-        children: [],
-        edges: []
-    }
-
-    if (_.isObject(attributes)) {
-        _.each(_.keys(attributes), function(key) {
-            this.attributes[key] = attributes[key];
-        }, this);
-    }
-
-    if (this.type) {
-        this.set('type', type);
-    }
-
-    if (attributes.id) {
-        this.set('id', attributes.id);
-    } else {
-        this.set('id', _.uniqueId());
-    }
-
-    this.currentSource = null;
-    this.currentEdge = null;
-
-    return this;
-};
-
-Diagram.Diagram.extend = extend;
-
-// Diagram extends the following prototypes:
-//  - Diagram.Element
-//  - Diagram.Events
+// Diagram
 //
-_.extend(
-    Diagram.Diagram.prototype,
-    Diagram.Element.prototype,
-    Events
-);
+//      var d = new Ds.Diagram('canvas');
+//      var d = new Ds.Diagram(document.getElementById('canvas'));
+//      var d = new Ds.Diagram('canvas', 1000, 800);
+//
+//      var D = Diagram.extend({
+//          el: 'canvas',
+//          width: 1000,
+//          height: 800,
+//          children: [
+//              SomeRootShape,
+//              AnotherRootShape
+//          ]
+//      });
+//
+//      var d = new D();
+//
+// The element can be set after the instance of Diagram is created,
+// but before the call to render.
+//
+//      d.setElement('canvas');
+//      d.setElement(document.getElementById('canvas'));
+//
+// This returns the HTMLElement:
+//
+//      d.el;
+//
+// Call render will display all shapes and connections of the diagram.
+//
+//      d.render();
 
-/**
- * Returns the Raphael instance associated to this diagram.
- *
- * If parameter is a Raphael instance, sets it as current paper
- * for this diagram.
- *
- * @param {Raphael}
- * @return {Raphael}
- * @api public
-**/
+Ds.Diagram = Ds.Element.extend({
 
-Diagram.Diagram.prototype.paper = function( paper ) {
-    if (paper) {
-        this._paper = paper;
-    }
+    constructor: function(attributes) {
+        Ds.Element.apply(this, [attributes]);
 
-    this._init();
+        this._selection = null;
+        this._currentSource = null;
+        this._currentEdge = null;
 
-    return this._paper;
-};
+        this.set('edges', []);
 
-Diagram.Diagram.prototype._init = function() {
-    if (!this._paper) {
-        this._paper = Raphael(this._el, this.width, this.height);
-    }
-    this.canvas().addEventListener('click', this);
-};
+        if (this.el) this.setElement(this.el);
 
-/**
- * Renders the diagram.
- *
- * Initialize the Raphael object and calls renders on its child.
- *
- * @return {Diagram} this
- * @api public
-**/
+        this.initialize(attributes);
+    },
 
-Diagram.Diagram.prototype.render = function() {
-    this._init();
+    // Returns the Raphael instance associated to the diagram.
+    //
 
-    _.each(this.get('children'), function(child) {
-        child.render();
-    });
+    paper: function() {
+        if (!this._paper) {
+            this._initPaper();
+        }
+        return this._paper;
+    },
 
-    _.each(this.get('edges'), function(edge) {
-        edge.render();
-    });
+    // Sets the HTML Element that will contain the diagram.
+    //
+    // The parameter can be a string, or an HTMLElement.
 
-    return this;
-};
+    setElement: function(el) {
+        if (!el) return this;
 
-/**
- * Performs a zoom
- *
- * @param {Number}
- * @param {String}
- * @api public
-**/
+        if (_.isString(el)) {
+            var id = el.indexOf('#') === 0 ? el.slice(1, el.length) : el;
+            this.el = document.getElementById(id);
+        } else if (element instanceof HTMLElement) {
+            this.el = el;
+        }
 
-Diagram.Diagram.prototype.zoom = function( level, direction ) {
-    // TODO
-};
+        return this;
+    },
 
-/**
- * Returns the html container element for this diagram.
- *
- * @return {HTMLElement}
- * @api public
-**/
+    // Returns the SVG Element containing the diagram.
 
-Diagram.Diagram.prototype.el = function() {
-    return this._el ? document.getElementById(this._el) : null;
-};
+    canvas: function() {
+        return this._paper ? this._paper.canvas : null;
+    },
 
-/**
- * Returns the SVG Element containing this diagram.
- *
- * This is a wrapper method for Raphael.canvas.
- *
- * @return {SVGElement}
- * @api public
-**/
+    // Renders the content of the diagram.
 
-Diagram.Diagram.prototype.canvas = function() {
-    return this._paper ? this._paper.canvas : null;
-};
+    render: function() {
+        // Insures the Raphael object is ready.
+        this.paper();
 
-/**
- * Removes the diagram and it's content from the canvas.
- *
- * This is a wrapper method for Raphael.remove().
- *
- * @api public
-**/
+        _.each(this.get('children'), function(child) {
+            child.render();
+        });
 
-Diagram.Diagram.prototype.remove = function() {
-    if (this._paper) {
-        _.each(this.get('children'), function(child) {child.remove();});
-        _.each(this.get('edges'), function(child) {child.remove();});
-        this._paper.remove();
-        this._paper = null;
-    }
-};
+        _.each(this.get('edges'), function(edge) {
+            edge.render();
+        });
 
-/**
- * Creates a shape from a given function of type Diagram.Shape.
- *
- * @param {Function} func - Shape constructor
- * @param {Object} attributes - Shape init attributes
- * @return {Shape} Returns the Shape object.
- * @api public
-**/
+        return this;
+    },
 
-Diagram.Diagram.prototype.createShape = function( func, attributes ) {
-    var shape = null;
+    zoom: function(direction) {
 
-    if (!func) {
-        throw new Error('Cannot create Shape if Shape constructor is missing');
-    }
+    },
 
-    attributes.diagram = this;
-    shape = new func( attributes );
+    // Clears the content of the diagram.
+    //
+    // This methods does not remove the content of the diagram,
+    // only
 
-    shape.on('remove', this.removeShape, this);
+    remove: function() {
+        if (this._paper) {
+            _.each(this.get('children'), function(child) { child.remove(); });
+            _.each(this.get('edges'), function(child) { child.remove(); });
+            this._paper.remove();
+            this._paper = null;
+        }
+    },
 
-    return shape;
-};
+    createShape: function(func, attributes) {
+        var shape = null,
+            attrs = attributes || {};
 
-/**
- * Removes a Shape.
- *
- * @param {Shape} shape - Shape to be removed
- * @api public
-**/
+        if (!func) {
+            throw new Error('Cannot create Shape if Shape constructor is missing.');
+        }
 
-Diagram.Diagram.prototype.removeShape = function( shape ) {
-    if (shape) {
-        shape.remove();
+        attrs.diagram = this;
+        shape = new func(attrs);
+
+        return shape;
+    },
+
+    removeShape: function(shape) {
+        if (!shape) return;
 
         var children = this.get('children');
-
         this.set('children', _.reject(children, function(child) {
             return child === shape;
         }));
-
         this.trigger('remove:children', shape);
-    }
-};
+    },
 
-/**
- * Returns a Shape specified by it's id.
- *
- * @param {Integer} id - Shape id
- * @return {Shape} Returns the Shape or null.
- * @api public
-**/
+    getShape: function(id) {
+        if (!id) return null;
 
-Diagram.Diagram.prototype.getShape = function(id) {
-    var shape = _.find(this.get('children'), function(child) {
-        var childID = child.get('id');
-        if (childID) {
-            return childID === id;
-        }
-    });
+        var shape = _.find(this.get('children'), function(child) {
+            return child.get('id') === id;
+        });
 
-    return shape;
-};
+        return shape;
+    },
 
-/**
- * Creates a Connection from a Diagram.Connection constructor.
- *
- * @param {Function} func - Connection constructor
- * @param {Object} attributes - Connection init attributes
- * @return {Connection} Returns the Connection object.
- * @api public
- *
-**/
+    createConnection: function(func, attributes) {
+        var connection = null,
+            attrs = attributes || {},
+            source = attrs.source,
+            target = attrs.target;
 
-Diagram.Diagram.prototype.createConnection = function( func, attributes ) {
-    var connection = null;
+        if (!source || !target || typeof func !== 'function') return connection;
 
-    if (typeof func === 'function') {
-        connection = new func( { diagram: this } );
-
-        if (attributes) {
-            var source = attributes.source;
-            var target = attributes.target;
-
-            if (source && target) {
-                connection.connect(source, target);
-            }
-        }
+        attrs.diagram = this;
+        connection = new func( attrs );
+        connection.connect(source, target);
 
         connection.on('remove:source remove:target', function(connection) {
             this.removeConnection( connection );
         }, this);
-    }
 
-    return connection;
-};
+        return connection;
+    },
 
-/**
- * Removes the Connection from the diagram. This method will call disconnect and
- * remove on the connection and triggers a remove:edges event.
- *
- * @param {Connection} connection - Connection to be removed
- * @api public
-**/
-
-Diagram.Diagram.prototype.removeConnection = function( connection ) {
-    if (connection) {
-        // removes connection from paper.
-        connection.remove();
+    removeConnection: function(connection) {
+        if (!connection) return;
 
         var edges = this.get('edges');
-
         this.set('edges', _.reject(edges, function( edge ) {
             return edge === connection;
         }));
 
         this.trigger('remove:edges', connection);
-    }
-};
+    },
 
-/**
- * Returns a Connection specified by it's id.
- *
- * @param {Integer} id - Connection id
- * @return {Connection} Returns the Connection or null.
- * @api public
-**/
+    getConnection: function(id) {
+        if (!id) return null;
 
-Diagram.Diagram.prototype.getConnection = function(id) {
-    var connection = _.find(this.get('edges'), function(child) {
-        var childID = child.get('id');
-        if (childID) {
-            return childID === id;
-        }
-    });
+        var connection = _.find(this.get('edges'), function(child) {
+            var childID = child.get('id');
+            if (childID) {
+                return childID === id;
+            }
+        });
 
-    return connection;
-};
+        return connection;
+    },
 
-/**
- * Returns true if a connection can be made.
- * @private
- *
-**/
-
-// TODO: separate change of state in another method.
-// Calling this method will change the state of this.currentSource.
-Diagram.Diagram.prototype.canConnect = function( node ) {
-    if (this.currentEdge) {
-        if (this.currentSource) {
-            return true;
+    canConnect: function( node ) {
+        if (this.currentEdge) {
+            if (this.currentSource) {
+                return true;
+            } else {
+                this.currentSource = node;
+                return false;
+            }
         } else {
-            this.currentSource = node;
             return false;
         }
-    } else {
-        return false;
-    }
-};
+    },
 
-/**
- * Connects the node to the previously selected node.
- * @private
-**/
+    connect: function( node ) {
+        var connection = null;
 
-Diagram.Diagram.prototype.connect = function( node ) {
-    var connection = null;
-
-    if (this.currentEdge) {
-        if (this.currentSource) {
-            connection = this.createConnection( this.currentEdge, {
-                source: this.currentSource,
-                target: node
-            });
-            this.currentEdge = null;
-            this.currentSource = null;
+        if (this.currentEdge) {
+            if (this.currentSource) {
+                connection = this.createConnection( this.currentEdge, {
+                    source: this.currentSource,
+                    target: node
+                });
+                this.currentEdge = null;
+                this.currentSource = null;
+            }
         }
-    }
 
-    return connection;
-};
+        return connection;
+    },
 
-/**
- * handleTextInput
- *
- * @private
- *
-**/
-// TODO: remove jQuery
-// @private
-Diagram.Diagram.prototype.handleTextInput = function() {
-    var text = $(this.inputText).val();
-    if (text) {
-        this.modifiedLabel.setText(text);
-        $(this.modifiedLabel.textForm).remove();
-        this.modifiedLabel.textForm = null;
-        this.modifiedLabel = null;
-        this.inputText = null;
-    }
-    if (this.repeatInputClick) {
-        if (this.modifiedLabel) {
-            $(this.modifiedLabel.textForm).remove();
+    handleTextInput: function() {
+        var text = this.inputText.value;
+        if (text) {
+            this.modifiedLabel.setText(text);
+            this.modifiedLabel.textForm.parentNode.removeChild(this.modifiedLabel.textForm);
             this.modifiedLabel.textForm = null;
             this.modifiedLabel = null;
             this.inputText = null;
-            this.repeatInputClick = false;
         }
-    } else {
-        this.repeatInputClick = true;
-    }
-};
-
-/**
- * handleEvent
- *
- * @private
- *
-**/
-
-Diagram.Diagram.prototype.handleEvent = function( evt ) {
-    var position = Point.getMousePosition( this._paper, evt );
-    var el = this._paper.getElementsByPoint(position.x, position.y);
-
-    if (el.length === 0 && this.selected) {
-        this.selected.deselect();
-    }
-
-    if (this.inputText) {
-        this.handleTextInput();
-    }
-
-    if (el.length === 0 && this.currentEdge) {
-        this.currentEdge = null;
-    }
-
-    var tool = this.currentTool;
-    if (tool) {
-        if (this._canCreate(tool)) {
-            var node = this.createShape(tool, position);
-            node.render();
-        }
-        if (el.length === 0) {
-            this.currentTool = null;
-        }
-    }
-};
-
-/**
- * Returns true if the constructor parameter corresponds to
- * a root Shape, i.e. a Shape that can be added directly to the
- * diagram, as opposed to a contained shape.
- *
- * @private
-**/
-
-Diagram.Diagram.prototype._canCreate = function( func ) {
-    var child = _.find(this.child, function(c) {
-        return c === func;
-    });
-    return child !== undefined;
-};
-
-/**
- * Load and initialize the diagram from a JSON object.
- *
- * @param {Object} data - JSON object
- * @api public
- *
-**/
-
-Diagram.Diagram.prototype.load = function( data ) {
-    if (data.name) {
-        this.set('name', data.name);
-    }
-
-    if (data.type) {
-        this.set('type', data.type);
-    }
-
-    var children = this.get('children');
-    _.each(data.children, function(child) {
-        var loaded = this.loadShape( child );
-        if (loaded) {
-            children.push( loaded );
-        }
-    }, this);
-
-    var edges = this.get('edges');
-    _.each(data.edges, function( edge ) {
-        var loaded = this.loadEdge( edge );
-        if (loaded) {
-            edges.push( loaded );
-        }
-    }, this);
-};
-
-/**
- * Returns the constructor for a JSON object.
- *
- * @param {String} type - element type
- * @private
- *
-**/
-
-Diagram.Diagram.prototype._getConstructor = function( type ) {
-    var names = type.split('.');
-    var _object = window;
-    for (var i = 0; i < names.length; i++) {
-        _object = _object[names[i]];
-    }
-    return _object;
-};
-
-/**
- * Load a Shape from its JSON description.
- *
- * @param {Object} data - JSON object
- * @api private
- *
-**/
-
-Diagram.Diagram.prototype.loadShape = function( data ) {
-    if (!data.type) {
-        throw new Error('Cannot create Shape, type is undefined');
-    }
-
-    var _object = this._getConstructor( data.type );
-
-    if (typeof _object === 'function') {
-        return this.createShape(_object, data);
-    } else {
-        return null;
-    }
-};
-
-/**
- * Load a Connection from its JSON description.
- *
- * @param {Object} data - JSON object
- * @param {Array} nodes - Shapes already loaded
- * @api private
- *
-**/
-
-Diagram.Diagram.prototype.loadEdge = function( data, nodes ) {
-    if (!data.type) {
-        throw new Error('Cannot create Edge, type is undefined');
-    }
-
-    var _object = this._getConstructor( data.type );
-    if (typeof _object === 'function') {
-        var children = nodes ? nodes : this.get('children');
-        // TODO could be done in one pass.
-        var source = _.find(nodes, function(s) { return s.get('id') == data.source; });
-        var target = _.find(nodes, function(s) { return s.get('id') == data.target; });
-
-        if (source && target) {
-            var edge = new _object({ diagram: this });
-            if (edge) {
-                edge.connect(source, target);
-                return edge;
+        if (this.repeatInputClick) {
+            if (this.modifiedLabel) {
+                this.modifiedLabel.textForm.parentNode.removeChild(this.modifiedLabel.textForm);
+                this.modifiedLabel.textForm = null;
+                this.modifiedLabel = null;
+                this.inputText = null;
+                this.repeatInputClick = false;
             }
+        } else {
+            this.repeatInputClick = true;
         }
+    },
+
+    handleEvent: function(e) {
+        var position = Point.get(this._paper, e);
+        var el = this._paper.getElementsByPoint(position.x, position.y);
+
+        if (el.length === 0 && this._selection) {
+            this._selection.deselect();
+            delete this._selection;
+        }
+
+        if (this.inputText) {
+            this.handleTextInput();
+        }
+
+        if (el.length === 0 && this.currentEdge) {
+            this.currentEdge = null;
+        }
+    },
+
+    setSelection: function(element) {
+        this._selection = element;
+    },
+
+    getSelection: function() {
+        return this._selection;
+    },
+
+    parse: function(data) {
+
+    },
+
+    toJSON: function() {
+
+    },
+
+    click: function(e) {
+
+    },
+
+    mouseover: function(e) {
+
+    },
+
+    // Private methods
+
+    _initPaper: function() {
+        if (!this.el) throw new Error('Cannot initialize Raphael Object, Diagram Element is missing, use setElement() before.');
+
+        if (this._paper) return;
+
+        this._paper = Raphael(this.el, this.width, this.height);
+        this._paper.setViewBox(0, 0, this._paper.width, this._paper.height);
+        this.canvas().addEventListener('click', this);
+    },
+
+    _canCreate: function( func ) {
+        var child = _.find(this.children, function(c) {
+            return c === func;
+        });
+        return child !== undefined;
     }
-    return null;
-};
+
+});
+

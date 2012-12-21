@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css?version=1">
+    <link type="text/css" rel="stylesheet" href="css/diagram.css?version=1">
+    <link type="text/css" rel="stylesheet" href="css/showcase.css?version=1">
+    <title>Diagram Editor Showcase</title>
+    <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+        .palette {
+            min-width: 200px;
+            height: 0;
+            position: absolute;
+            z-index: 100;
+            top: 60px;
+            left: 50px;
+        }
+        .palette-header {
+            background-image: -moz-linear-gradient( top, #fff, #efefef );
+            background-image: -webkit-gradient(
+            linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
+            );
+            background-image: linear-gradient(top, white, #EFEFEF);
+            width: auto;
+            height: 20px;
+            cursor: move;
+        }
+        .palette .palette-inner {
+            background: rgb(48,62,76);
+            color: white;
+            position: absolute;
+            width: 100%;
+            border-color: rgb(40,56,70);
+            border-width: 3px;
+            border-style: solid;
+            display: inline-block;
+        }
+        .palette-inner .palette-header {
+            background: rgb(72,94,116);
+            color: white;
+        }
+        .palette-inner .palette-body {
+            background: rgb(48,60,76);
+            border-color: rgb(40,56,70);
+            border-width: 3px;
+            border-style: solid;
+        }
+        .palette-body {
+            position: relative;
+        }
+        .palette-group {
+            position: relative;
+            color: white;
+        }
+        .palette-item {
+            color: white;
+            text-align: left;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .palette-item[class~='highlight'] {
+            background: rgba(72, 94, 116, 0.8);
+        }
+        .palette-header span {
+            padding-left: 8px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <div id="canvas" style="width: 4000px; height: 4000px; position: relative;">
+            <div id="diagram-grid" class="grid-overlay"></div>
+        </div>
+    </div>
+
+    <!--    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+    <script type="text/javascript" src="lib/bootstrap.min.js"></script> -->
+    <script type="text/javascript" src="lib/raphael.js"></script>
+    <script type="text/javascript" src="lib/underscore-min.js"></script>
+    <script type="text/javascript" src="lib/diagrams.js"></script>
+    <script type="text/javascript" src="lib/showcase.js"></script>
+</body>
+</html>

@@ -1,37 +1,32 @@
+
 // LabelImage
 //
-//
-var LabelImage = Diagram.Image = function( attributes ) {
-    this.parent = attributes.parent;
-    this.diagram = this.parent.diagram;
 
-    this.attributes = {};
-    this.set('type', 'Diagram.Image');
-    this.set('width', attributes.width);
-    this.set('height', attributes.height);
-    this.set('src', attributes.src);
-    return this;
-};
+var LabelImage = Ds.Image = Ds.DiagramElement.extend({
 
-_.extend(LabelImage.prototype, Diagram.SVGElement.prototype);
+    constructor: function(attributes) {
+        Ds.DiagramElement.apply(this, [attributes]);
+    },
 
-LabelImage.prototype.render = function() {
-    var paper = this.paper();
+    render: function() {
+        var paper = this.paper(),
+            bBox = this.parent.wrapper.getBBox(),
+            src = this.get('src'),
+            width = this.get('width'),
+            height = this.get('height');
 
-    var bBox = this.parent.wrapper.getBBox(),
-        src = this.get('src'),
-        width = this.get('width'),
-        height = this.get('height');
+        this.wrapper = paper.image(src, bBox.x, bBox.y, width, height);
+        this.wrapper.toFront();
+        this.wrapper.controller = this;
 
-    this.wrapper = paper.image(src, bBox.x, bBox.y, width, height);
-    this.wrapper.toFront();
-    this.wrapper.controller = this;
+        return this;
+    },
 
-    return this;
-};
+    center: function() {
+        var ntbb = this.parent.wrapper.getABox();
+        this.wrapper.attr({ x: ntbb.x - this.get('width') });
+        this.wrapper.attr({ y: ntbb.yMiddle - (this.get('height') / 2) });
+    }
 
-LabelImage.prototype.center = function() {
-    var ntbb = this.parent.wrapper.getABox();
-    this.wrapper.attr({ x: ntbb.x - this.get('width') });
-    this.wrapper.attr({ y: ntbb.yMiddle - (this.get('height') / 2) });
-};
+});
+

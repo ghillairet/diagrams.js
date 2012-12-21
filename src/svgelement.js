@@ -62,21 +62,6 @@ _.extend(
     },
 
     /**
-     * Remove the SVGElement from Raphael Paper..
-     *
-     * @method remove
-     * @return {Object}
-     * @api public
-    **/
-
-    remove: function() {
-        if (this.wrapper) {
-            this.wrapper.remove();
-        }
-        return this;
-    },
-
-    /**
      * Shows the SVGElement if previously hidden.
      *
      * @method show
@@ -214,10 +199,10 @@ _.extend(
         return this.paper().ellipse(x, y, rx, ry).attr(attr);
     },
 
-    /**
-     * @method
-     * @private
-    **/
+    //
+    // @method
+    // @private
+    //
 
     _path: function() {
         var path = this._get('path'),
@@ -226,35 +211,86 @@ _.extend(
         return this.paper().path(path).attr(attr);
     },
 
-    /**
-     * @method _createFigure
-     * @private
-    **/
+    draw: function(figure, parent) {
+        if (!figure || !figure.type) return;
 
-    _createFigure: function() {
-        var wrapper = null;
+        var type = figure.type,
+            x = this._get('x'),
+            y = this._get('y'),
+            wrapper;
 
-        // Creates the Raphael Element according to the type of figure.
-        // The Element is attach to the FigureShape via the property wrapper.
-        switch (this.get('attr').type) {
+        switch(type) {
             case 'rect':
-                wrapper = this._rect();
+                wrapper = this.paper().rect(x, y);
                 break;
             case 'circle':
-                wrapper = this._circle();
+                wrapper = this.paper().circle(x, y);
                 break;
             case 'ellipse':
-                wrapper = this._ellipse();
+                wrapper = this.paper().ellipse(x, y);
                 break;
             case 'path':
-                wrapper = this._path();
+                wrapper = this.paper().path(figure.path);
                 break;
             default:
                 wrapper = null;
         }
 
+        if (wrapper) {
+            wrapper.attr(figure);
+
+            if (parent) {
+                var box = parent.getABox();
+                wrapper.translate(box.topLeft.x,  box.topLeft.y);
+            }
+            if (figure.figure) {
+                wrapper._child = this.draw(figure.figure, wrapper);
+                wrapper._child._parent = wrapper;
+            }
+        }
+
+        return wrapper;
+    },
+
+    drawContent: function() {
+        var figure = this.figure;
+        if (this.wrapper) {
+            if (figure.figure) {
+               this.wrapper._child = this.draw(figure.figure, this.wrapper);
+            }
+        }
+    },
+
+    _remove: function() {
+        var doRemove = function(wrapper) {
+            if (wrapper) {
+                if (wrapper._child) {
+                    doRemove(wrapper._child);
+                }
+                wrapper.remove();
+            }
+        };
+
+        if (this.wrapper) {
+            doRemove(this.wrapper);
+        }
+    },
+
+    //
+    // @method _createFigure
+    // @private
+    //
+
+    _createFigure: function() {
+        var wrapper,
+            figure = this.figure;
+
+        // Creates the Raphael Element according to the type of figure.
+        // The Element is attach to the FigureShape via the property wrapper.
+
+        wrapper = this.draw(figure);
         if (!wrapper) {
-            throw new Error('Cannot create figure');
+            throw new Error('Cannot create figure for ' + this);
         }
 
         return wrapper;

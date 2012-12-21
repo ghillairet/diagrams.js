@@ -1,0 +1,89 @@
+#main, .palette {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.palette {
+    position: absolute;
+    top: 60px;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    width: auto;
+}
+
+.icon-menu {
+
+}
+
+.scrollable {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tool-box-slider .panel {
+    background: #F2F2F2;
+    position: relative;
+    border-bottom: #444 solid 2px;
+}
+
+.grid-overlay {
+    background-position: center center;
+    background-repeat: repeat;
+    position: fixed;
+    z-index: -10;
+    background-image: url('../img/tiny_grid.png');
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+[class^="icon-tool-"], [class*=" icon-tool-"] {
+    background-image: url('../img/Resource.gif');
+}
+
+.icon-tool-Circle {
+    background-image: url('../img/circle.png');
+}
+
+.icon-tool-Rectangle {
+    background-image: url('../img/rectangle.png');
+}
+
+.icon-tool-Rounded {
+}
+
+.icon-tool-Rounded-label {
+}
+
+.icon-tool-Ellipse {
+    background-image: url('../img/ellipse.png');
+}
+
+.icon-tool-Line {
+    background-image: url('../img/line.png');
+}
+
+.icon-tool-Arrow {
+    background-image: url('../img/arrow.png');
+}
+
+.icon-tool-dash-arrow {
+    background-image: url('../img/dash-arrow.png');
+}
+
+.icon-tool-Class {
+    background-image: url('../img/EClass.gif');
+}
+
+.icon-tool-Property {
+    background-image: url('../img/EAttribute.gif');
+}
+
+.icon-tool-op {
+    background-image: url('../img/EAttribute.gif');
+}

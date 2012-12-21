@@ -12,10 +12,13 @@ module.exports = function(grunt) {
                     'src/events.js',
                     'src/arrows.js',
                     'src/element.js',
-                    'src/svgelement.js',
                     'src/diagram.js',
                     'src/toolbox.js',
-                    'src/shape/dragger.js',
+                    'src/layout/layout.js',
+                    'src/layout/grid.js',
+                    'src/layout/flexgrid.js',
+                    'src/layout/flow.js',
+                    'src/layout/xy.js',
                     'src/shape/selector.js',
                     'src/shape/anchor.js',
                     'src/shape/image.js',
@@ -30,12 +33,12 @@ module.exports = function(grunt) {
                     'src/properties/propertybox.js',
                     'build/end.js'
                 ],
-                dest: 'dist/diagram.js'
+                dest: 'dist/diagrams.js'
             }
         },
 
         lint: {
-            all: ['grunt.js', 'dist/diagram.js', 'test/*.js']
+            all: ['grunt.js', 'dist/diagrams.js', 'test/*.js']
         },
 
         jshint: {
@@ -52,8 +55,8 @@ module.exports = function(grunt) {
 
         min: {
             dist: {
-                src: ['dist/diagram.js'],
-                dest: 'dist/diagram.min.js'
+                src: ['dist/diagrams.js'],
+                dest: 'dist/diagrams.min.js'
             }
         }
 

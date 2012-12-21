@@ -1,4 +1,4 @@
-Diagram.arrows = {
+Ds.arrows = {
 
     none: function( size ) {
         if (!size) {
@@ -11,7 +11,7 @@ Diagram.arrows = {
             attr: {
                 opacity: 0
             }
-        }
+        };
     },
 
     basic: function( p, size ) {
@@ -30,6 +30,7 @@ Diagram.arrows = {
                 stroke: 'black',
                 fill: 'black'
             }
-        }
+        };
     }
 };
+

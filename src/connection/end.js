@@ -1,3 +1,4 @@
+
 // ConnectionEnd
 //
 //  end: {
@@ -5,7 +6,9 @@
 //      label: {
 //          text: '[]'
 //      }
-//  }
+//
+// }
+
 var ConnectionEnd = function( paper, point, angle, radians, attributes ) {
     this.paper = paper;
     this.point = point;
@@ -27,7 +30,7 @@ var ConnectionEnd = function( paper, point, angle, radians, attributes ) {
     return this;
 };
 
-_.extend(ConnectionEnd.prototype, Diagram.Element.prototype, Diagram.SVGElement);
+_.extend(ConnectionEnd.prototype, Ds.Element.prototype);
 
 ConnectionEnd.prototype.remove = function() {
     if (this.wrapper) {
@@ -42,15 +45,15 @@ ConnectionEnd.prototype.render = function() {
     }
 
     var arrow;
-    if (typeof Diagram.arrows[type] === 'function') {
-        arrow = Diagram.arrows[type]( this.point );
+    if (typeof Ds.arrows[type] === 'function') {
+        arrow = Ds.arrows[type]( this.point );
     } else {
-        arrow = Diagram.arrows.basic( this.point );
+        arrow = Ds.arrows.basic( this.point );
     }
 
     // Don't ask.
-    var x = this.point.x + (-2 * (arrow.dx - 1) * Math.cos(this.radians));
-    var y = this.point.y + (2 * (arrow.dy - 1) * Math.sin(this.radians));
+    var x = this.point.x + (-1.5 * (arrow.dx - 1) * Math.cos(this.radians));
+    var y = this.point.y + (1.5 * (arrow.dy - 1) * Math.sin(this.radians));
 
     this.wrapper = this.paper.path( arrow.path.join(' ') );
 

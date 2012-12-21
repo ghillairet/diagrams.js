@@ -1,9 +1,7 @@
-/**
- *
- * @param x
- * @param y
- * @returns {Point}
- */
+
+// Point
+//
+
 var Point = function Point( x, y ) {
     var xy;
     if (y === undefined){
@@ -17,22 +15,22 @@ var Point = function Point( x, y ) {
     }
 };
 
-Point.getMousePosition = function( paper, evt ) {
+Point.get = function(paper, e) {
     // IE:
     if (window.event && window.event.contentOverflow !== undefined) {
         return new Point(window.event.x, window.event.y);
     }
 
     // Webkit:
-    if (evt.offsetX !== undefined && evt.offsetY !== undefined) {
-        return new Point(evt.offsetX, evt.offsetY);
+    if (e.offsetX !== undefined && e.offsetY !== undefined) {
+        return new Point(e.offsetX, e.offsetY);
     }
 
     // Firefox:
     // get position relative to the whole document
     // note that it also counts on scrolling (as opposed to clientX/Y).
-    var pageX = evt.pageX;
-    var pageY = evt.pageY;
+    var pageX = e.pageX;
+    var pageY = e.pageY;
 
     // SVG's element parent node is world
     var el = paper.canvas.parentNode;
@@ -54,3 +52,4 @@ Point.getMousePosition = function( paper, evt ) {
 
     return new Point(offsetX, offsetY);
 };
+

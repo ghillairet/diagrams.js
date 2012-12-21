@@ -1,4 +1,6 @@
 
+// Raphael extensions for Diagrams.js.
+
 var isNatural = function(number) {
     if (_.isNumber(number) && _.isFinite(number)) {
         return number > 0;
@@ -86,6 +88,12 @@ Raphael.el.rdxy = function(dx, dy, direction) {
 
 Raphael.el.o = function () {
     var attr = this.attr();
+
+    this.oa = _.clone(attr);
+    this.oa.fill = this.attr('fill'); // for gradients.
+    if (this.oa['fill-opacity'] === undefined) {
+        this.oa['fill-opacity'] = 1;
+    }
     this.ox = this.x();
     this.oy = this.y();
     this.ow = attr.width;
@@ -93,6 +101,28 @@ Raphael.el.o = function () {
     this.or = attr.r;
     this.orx = attr.rx;
     this.ory = attr.ry;
+    return this;
+};
+
+Raphael.el.reset = function() {
+    var attrs = this.oa;
+
+    if (!attrs) return this;
+
+    // changes coordinates and sizes
+    // reset other attributes.
+    attrs.width = this.attrs.width;
+    attrs.height = this.attrs.height;
+    attrs.r = this.attrs.r;
+    attrs.cx = this.attrs.cx;
+    attrs.cy = this.attrs.cy;
+    attrs.x = this.attrs.x;
+    attrs.y = this.attrs.y;
+
+    this.attr(attrs);
+
+    delete this.oa;
+
     return this;
 };
 

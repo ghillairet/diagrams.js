@@ -20,86 +20,58 @@
 }
 
 .palette {
+    width: 200px;
+    height: 200px;
     position: absolute;
-    top: 60px;
-    bottom: 0;
-    left: 0;
-    height: auto;
-    width: auto;
-    z-index: 1;
-    background: none;
+    z-index: 100;
+    top: 0;
+    left: 20px;
+    border-color: whitesmoke;
+    border-width: 2px;
+    border-style: solid;
+    display: inline-block;
+}
+
+.palette .palette-inner {
+    background: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
 }
 
 .palette-header {
-    background-image: -moz-linear-gradient( top, #fff, #efefef );
-    background-image: -webkit-gradient(
-        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
-    );
-    background-image: linear-gradient(top, white, #EFEFEF);
-    width: auto;
     height: 20px;
-    cursor: move;
-}
-
-.palette-header h1 {
-    font-size: 12px;
-    line-height: 0px;
-}
-
-.palette-groups {
-    background: whitesmoke;
-}
-
-.property-box {
-    position: absolute;
-    top: 60px;
-    bottom: 0;
-    left: 0;
-    height: 200px;
-    width: 340px;
-    z-index: 1;
-    border-width: 1px;
-    border-color: whiteSmoke;
-    border-style: solid;
-    box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
-    -webkit-box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
-    -moz-box-shadow: 1px 4px 4px 1px rgba(221,221,221,1);
-}
-
-.property-box-body {
-   background: white;
-   height: 180px;
-}
-
-.property-box-header {
+    background-color: #E3E3E3;
     background-image: -moz-linear-gradient( top, #fff, #efefef );
-    background-image: -webkit-gradient(
-        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
-    );
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef));
     background-image: linear-gradient(top, white, #EFEFEF);
-    width: auto;
-    height: 20px;
-    cursor: move;
+    color: #2E2E2E;
+    -moz-border-radius: 4px 4px 0 0;
+    -webkit-border-radius: 4px 4px 0 0;
+    border-radius: 4px 4px 0 0;
+    width: 100%;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-bottom-color: #A5A5A5;
 }
 
-.accordion-group {
-    border-radius: 0px;
-    line-height: 4px;
+.palette-body {
+    position: relative;
 }
 
-.accordion-heading {
-    background-image: -moz-linear-gradient( top, #fff, #efefef );
-    background-image: -webkit-gradient(
-        linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
-    );
-    background-image: linear-gradient(top, white, #EFEFEF);
-    width: auto;
-    height: 20px;
+.palette-group {
+    position: relative;
+    color: white;
+    top: 8px;
+    left: 2%;
+    width: 96%;
+    height: 96%;
 }
 
-.accordion-heading a {
-    color: grey;
-    font-size: 12px;
+.palette-item {
+    color: black;
+    text-align: left;
+    padding-left: 8px;
 }
 
 .tool-box-slider {
@@ -188,9 +160,6 @@
 
   opacity: 0.2;
   pointer-events: none;
-}
-
-.palette-tool {
 }
 
 [class^="icon-tool-"], [class*=" icon-tool-"] {

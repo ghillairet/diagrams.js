@@ -12,7 +12,7 @@ var eventSplitter = /\s+/;
 //     object.on('expand', function(){ alert('expanded'); });
 //     object.trigger('expand');
 //
-var Events = Diagram.Events = {
+var Events = Ds.Events = {
 
     // Bind one or more space separated events, `events`, to a `callback`
     // function. Passing `"all"` will bind the callback to all events fired.
@@ -108,8 +108,3 @@ var Events = Diagram.Events = {
 
 };
 
-var Backbone = this.Backbone;
-
-if (Backbone) {
-    Events = Backbone.Events;
-}

@@ -1,10 +1,19 @@
-// diagram.js
-// version 0.0.1
-(function() {
-//    "use strict";
 
-    var root = this;
+//     Diagrams.js 0.1.0
+//     JavaScript Diagramming Library.
+//
+//     © 2012 Guillaume Hillairet.
 
-    root.Diagram = Diagram = {
-        version: '0.0.1'
+(function(root) {
+
+    "use strict";
+
+//    var root = this;
+
+    var Ds = {
+        version: '0.1.0'
     };
+
+    root.Ds = Ds;
+    root.Diagrams = Ds;
+

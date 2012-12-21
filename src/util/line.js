@@ -1,6 +1,7 @@
+
 // Line
 //
-//
+
 var Line = function(paper, p1, p2) {
     this.paper = paper;
     this.start = p1;
@@ -43,7 +44,7 @@ Line.prototype.intersection = function(line) {
     return {
         x: this.start.x + (alpha * pt1Dir.x / det),
         y: this.start.y + (alpha * pt1Dir.y / det)
-    }
+    };
 };
 
 // Find intersection point with a box.
@@ -63,7 +64,8 @@ Line.prototype.findIntersection = function( box ) {
         if (intersection) {
             return intersection;
         }
-    };
+    }
 
     return null;
 };
+

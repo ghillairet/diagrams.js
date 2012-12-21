@@ -1,28 +1,21 @@
-/**
- * Draggable
- *
- * Makes a Shape draggable.
- *
-**/
-
-Diagram.Draggable = function () {
-};
+//
+// Draggable
+//
+// Makes a Shape draggable.
+//
 
 /**
- * Adds necessary methods to make non draggable shape into
- * a draggable one.
- *
-**/
-
-Diagram.Draggable.prototype.asDraggable = function( options ) {
+Diagram.Shape.prototype.asDraggable = function( options ) {
     if (this.wrapper) {
-        this.wrapper.attr( {cursor: 'move'} );
+        this.wrapper.attr({ cursor: 'move' });
     }
 
     var start = function() {
-        this.o();
-        if (this.controller) {
-            var control = this.controller;
+        var wrapper = this;
+        wrapper.o();
+
+        if (wrapper.controller) {
+            var control = wrapper.controller;
             if (typeof control.deselect === 'function') {
                 control.deselect();
             }
@@ -33,41 +26,38 @@ Diagram.Draggable.prototype.asDraggable = function( options ) {
                 control._tool.remove();
             }
 
-            this.unmouseover(control.handleMouseOver);
-            this.unmouseout(control.handleMouseOut);
+            wrapper.unmouseover(control.handleMouseOver);
+            wrapper.unmouseout(control.handleMouseOut);
 
-            var children = control.get('children');
-            if (children && children.length) {
-                for (var i = 0; i < children.length; i++) {
-                    start.apply( children[i].wrapper );
-                }
-            }
+            drawDragger(this);
         }
     };
 
     var move = function( dx, dy, mx, my, ev ) {
-        var b = this.getBBox();
-        var x = this.ox + dx;
-        var y = this.oy + dy;
-        var r = this.is('circle') || this.is('ellipse') ? b.width / 2 : 0;
-        var paper = this.paper;
+        var wrapper = this;
+        var b = wrapper.getBBox(),
+            x = wrapper.ox + dx,
+            y = wrapper.oy + dy,
+            r = wrapper.is('circle') || wrapper.is('ellipse') ? b.width / 2 : 0,
+            paper = wrapper.paper,
+            position;
 
         x = Math.min(
-            Math.max(r, x),
-            paper.width - (this.is('circle') || this.is('ellipse') ? r : b.width));
-          y = Math.min(
-              Math.max(r, y),
-              paper.height - (this.is('circle') || this.is('ellipse') ? r : b.height));
+                Math.max(r, x),
+                paper.width - (wrapper.is('circle') || wrapper.is('ellipse') ? r : b.width));
+        y = Math.min(
+                Math.max(r, y),
+                paper.height - (wrapper.is('circle') || wrapper.is('ellipse') ? r : b.height));
 
-        var position = { x: x, y: y, cx: x, cy: y };
-        this.attr(position);
+        position = { x: x, y: y, cx: x, cy: y };
+        wrapper.attr(position);
 
-        if (this.controller) {
-            var control = this.controller;
+        if (wrapper.controller) {
+            var control = wrapper.controller;
 
             if (control.isConnectable) {
-                var inEdges = control.inEdges;
-                var outEdges = control.outEdges;
+                var inEdges = control.inEdges,
+                    outEdges = control.outEdges;
 
                 if (inEdges && inEdges.length) {
                     for (var i = 0; i < inEdges.length; i++) {
@@ -75,30 +65,62 @@ Diagram.Draggable.prototype.asDraggable = function( options ) {
                     }
                 }
                 if (outEdges && outEdges.length) {
-                    for (var i = 0; i < outEdges.length; i++) {
-                        outEdges[i].render();
+                    for (var j = 0; j < outEdges.length; j++) {
+                        outEdges[j].render();
                     }
-                }
-            }
-            var children = control.get('children');
-            if (children && children.length) {
-                for (var i = 0; i < children.length; i++) {
-                    move.apply(children[i].wrapper, [dx, dy, mx, my, ev]);
                 }
             }
         }
     };
 
     var end = function() {
-        var control = this.controller;
-        this.mouseover(control.handleMouseOver);
-        this.mouseout(control.handleMouseOut);
-        if (control && control.shadow) {
-            control.createShadow();
+        var wrapper = this;
+        var control = wrapper.controller;
+        wrapper.mouseover(control.handleMouseOver);
+        wrapper.mouseout(control.handleMouseOut);
+
+        var attrs = wrapper.oa;
+        attrs.cx = wrapper.attrs.cx;
+        attrs.cy = wrapper.attrs.cy;
+        attrs.x = wrapper.attrs.x;
+        attrs.y = wrapper.attrs.y;
+        wrapper.attr(attrs);
+        delete wrapper.oa;
+
+        if (control) {
+            control._renderContent();
+
+            if (control.shadow) {
+                control.createShadow();
+            }
         }
     };
 
-    this.wrapper.drag(move, start, end);
+    var drawDragger = function(wrapper) {
+        var attrs = _.clone(wrapper.attrs),
+            type = wrapper.type;
+
+        wrapper.oa = attrs;
+        if (wrapper.oa['fill-opacity'] === undefined) {
+            wrapper.oa['fill-opacity'] = 1;
+        }
+
+        var removeChild = function(wrapper) {
+            if (wrapper._child) {
+                removeChild(wrapper._child);
+                wrapper._child.remove();
+            }
+        };
+        removeChild(wrapper);
+
+        wrapper.attr({ fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 });
+
+        return wrapper;
+    };
+
+    var wrapper = this.wrapper;
+    wrapper.drag(move, start, end);
 
     return this;
 };
+**/
