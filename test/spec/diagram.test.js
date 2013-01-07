@@ -1,15 +1,13 @@
 describe('Diagram', function() {
 
-    var D = Diagram;
-
     it('must be available', function() {
-        assert.ok(D);
+        assert.ok(Ds);
     });
 
-    var diagram = new D.Diagram();
+    var diagram = new Ds.Diagram();
     diagram.setElement('canvas');
 
-    var SomeShape = D.Shape.extend({
+    var SomeShape = Ds.Shape.extend({
         figure: {
             type: 'circle',
             r: 30,
@@ -19,7 +17,7 @@ describe('Diagram', function() {
         }
     });
 
-    var BasicConnection = D.Connection.extend({
+    var BasicConnection = Ds.Connection.extend({
         stroke: 'red',
         'stroke-width': 2,
         label: [

@@ -1,10 +1,9 @@
 describe('Connection', function() {
 
-    var D = Diagram;
-    var diagram = new D.Diagram();
+    var diagram = new Ds.Diagram();
     diagram.setElement('canvas');
 
-    var SomeShape = D.Shape.extend({
+    var SomeShape = Ds.Shape.extend({
         figure: {
             type: 'circle',
             r: 30,
@@ -14,7 +13,7 @@ describe('Connection', function() {
         }
     });
 
-    var BasicConnection = D.Connection.extend({
+    var BasicConnection = Ds.Connection.extend({
         stroke: 'red',
         'stroke-width': 2,
         label: [
@@ -50,10 +49,10 @@ describe('Connection', function() {
 
             assert.strictEqual(c.get('source'), sourceShape);
             assert.strictEqual(c.get('target'), targetShape);
-            assert.equal(sourceShape.outEdges.length, 1);
-            assert.equal(targetShape.inEdges.length, 1);
-            assert.strictEqual(sourceShape.outEdges[0], c);
-            assert.strictEqual(targetShape.inEdges[0], c);
+            assert.equal(sourceShape.outs.length, 1);
+            assert.equal(targetShape.ins.length, 1);
+            assert.strictEqual(sourceShape.outs[0], c);
+            assert.strictEqual(targetShape.ins[0], c);
         });
 
     });
@@ -63,8 +62,8 @@ describe('Connection', function() {
         it('should disconnect the shapes', function() {
             c.disconnect();
 
-            assert.equal(sourceShape.outEdges.length, 0);
-            assert.equal(targetShape.inEdges.length, 0);
+            assert.equal(sourceShape.outs.length, 0);
+            assert.equal(targetShape.ins.length, 0);
             assert.equal(c.get('source'), null);
             assert.equal(c.get('target'), null);
         });
@@ -74,11 +73,10 @@ describe('Connection', function() {
     describe('#remove', function() {
         it('should remove from canvas, from diagram and disconnect', function() {
             c.connect(sourceShape, targetShape); // reconnect to test disconnection.
-            c.remove();
+            c.remove(true);
 
             assert.equal(c.wrapper, null);
             var found = _.find(diagram.get('edges'), function(edge) {
-                console.log(edge, c);
                 return edge === c;
             });
             assert.equal(found, null);

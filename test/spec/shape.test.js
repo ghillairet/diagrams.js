@@ -1,10 +1,9 @@
 describe('Shape', function() {
-    var D = Diagram;
 
-    var diagram = new D.Diagram();
+    var diagram = new Ds.Diagram();
     diagram.setElement('canvas');
 
-    var SomeShape = D.Shape.extend({
+    var SomeShape = Ds.Shape.extend({
         figure: {
             type: 'circle',
             r: 30,
@@ -23,7 +22,8 @@ describe('Shape', function() {
 
         var found = _.find(diagram.get('children'), function(child) { return child === s; });
         assert.strictEqual(s, found);
-        s.remove();
+        s.remove(true);
+
         // make sure it is removed
         found = _.find(diagram.get('children'), function(child) { return child === s; });
         assert.equal(found, null);
@@ -31,9 +31,9 @@ describe('Shape', function() {
 
     it('should have correct coordinates', function() {
         var s = new SomeShape({ diagram: diagram, x: 0, y: 0 });
-        assert.equal(s.getX(), 0);
-        assert.equal(s.getY(), 0);
-        s.remove();
+        assert.equal(s.get('x'), 0);
+        assert.equal(s.get('y'), 0);
+        s.remove(true);
     });
 
     it('should have same paper has diagram when rendered', function() {
@@ -42,18 +42,16 @@ describe('Shape', function() {
         var paper = s.paper();
         assert.ok(paper);
         assert.strictEqual(paper, diagram.paper());
-        s.remove();
+        s.remove(true);
     });
 
     it('should have correct coordinates after moving', function() {
         var s = new SomeShape({ diagram: diagram, x: 0, y: 0 });
         s.render();
         s.move(10, 10);
-        assert.equal(s.getX(), 10);
-        assert.equal(s.getY(), 10);
-        assert.equal(s.attr('x'), 10);
-        assert.equal(s.attr('y'), 10);
-        s.remove();
+        assert.equal(s.get('x'), 10);
+        assert.equal(s.get('y'), 10);
+        s.remove(true);
     });
 
     it('should be removable from diagram', function() {
@@ -68,7 +66,7 @@ describe('Shape', function() {
             s.render();
 
             assert.ok(_.find(diagram.get('children'), function(c) { return c === s; }));
-            s.remove();
+            s.remove(true);
             assert.equal(s.wrapper, null);
             assert.equal(_.find(diagram.get('children'), function(c) { return c === s; }), null);
         });
