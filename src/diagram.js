@@ -150,16 +150,19 @@ Ds.Diagram = Ds.Element.extend({
     },
 
     createConnection: function(func, attributes) {
+        if (typeof func !== 'function') return;
+
         var connection = null,
             attrs = attributes || {},
             source = attrs.source,
             target = attrs.target;
 
-        if (!source || !target || typeof func !== 'function') return connection;
-
         attrs.diagram = this;
         connection = new func( attrs );
-        connection.connect(source, target);
+
+        if (source && target) {
+            connection.connect(source, target);
+        }
 
         connection.on('remove:source remove:target', function(connection) {
             this.removeConnection( connection );
