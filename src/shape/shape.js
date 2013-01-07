@@ -144,6 +144,10 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
             this._tool.remove();
             delete this._tool;
         }
+
+        if (fromDiagram) {
+            this.diagram.removeShape(this);
+        }
     },
 
     disconnect: function(connection, direction) {
