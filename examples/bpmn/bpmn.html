@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagrams.js - UML Example</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+        .palette {
+            min-width: 200px;
+            height: 0;
+            position: absolute;
+            z-index: 100;
+            top: 60px;
+            left: 50px;
+        }
+        .palette-header {
+            background-image: -moz-linear-gradient( top, #fff, #efefef );
+            background-image: -webkit-gradient(
+            linear,left top, left bottom, color-stop(0, #fff), color-stop(1, #efefef)
+            );
+            background-image: linear-gradient(top, white, #EFEFEF);
+            width: auto;
+            height: 20px;
+            cursor: move;
+        }
+        .palette .palette-inner {
+            background: rgb(48,62,76);
+            color: white;
+            position: absolute;
+            width: 100%;
+            border-color: rgb(40,56,70);
+            border-width: 3px;
+            border-style: solid;
+            display: inline-block;
+        }
+        .palette-inner .palette-header {
+            background: rgb(72,94,116);
+            color: white;
+        }
+        .palette-inner .palette-body {
+            background: rgb(48,60,76);
+            border-color: rgb(40,56,70);
+            border-width: 3px;
+            border-style: solid;
+        }
+        .palette-body {
+            position: relative;
+        }
+        .palette-group {
+            position: relative;
+            color: white;
+        }
+        .palette-item {
+            color: white;
+            text-align: left;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .palette-item[class~='highlight'] {
+            background: rgba(72, 94, 116, 0.8);
+        }
+        .palette-header span {
+            padding-left: 8px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="diagram" style="background: whitesmoke; width: 1000px; height: 800px"></div>
+    </div>
+
+    <script type="text/javascript" src="../../lib/raphael.js"></script>
+    <script type="text/javascript" src="../../lib/underscore.js"></script>
+    <script type="text/javascript" src="../../dist/diagrams.js"></script>
+    <script type="text/javascript" src="bpmn.js"></script>
+</body>
+
