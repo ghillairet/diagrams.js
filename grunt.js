@@ -6,31 +6,34 @@ module.exports = function(grunt) {
             dist: {
                 src: [
                     'build/start.js',
-                    'src/util/point.js',
-                    'src/util/line.js',
                     'src/extensions.js',
-                    'src/events.js',
-                    'src/arrows.js',
-                    'src/element.js',
-                    'src/diagram.js',
-                    'src/toolbox.js',
-                    'src/layout/layout.js',
-                    'src/layout/grid.js',
-                    'src/layout/flexgrid.js',
-                    'src/layout/flow.js',
-                    'src/layout/xy.js',
-                    'src/shape/selector.js',
-                    'src/shape/anchor.js',
-                    'src/shape/image.js',
-                    'src/shape/label.js',
-                    'src/shape/shape.js',
-                    'src/shape/compartment.js',
-                    'src/connection/anchor.js',
-                    'src/connection/end.js',
-                    'src/connection/label.js',
-                    'src/connection/connection.js',
-                    'src/palette/palette.js',
-                    'src/properties/propertybox.js',
+                    'src/base/Point.js',
+                    'src/base/Line.js',
+                    'src/base/Events.js',
+                    'src/base/Element.js',
+                    'src/diagram/DiagramElement.js',
+                    'src/layout/Layout.js',
+                    'src/diagram/LayoutElement.js',
+                    'src/diagram/Diagram.js',
+                    'src/diagram/Toolbox.js',
+                    'src/layout/GridLayout.js',
+                    'src/layout/FlexgridLayout.js',
+                    'src/layout/FlowLayout.js',
+                    'src/layout/XYLayout.js',
+                    'src/layout/BorderLayout.js',
+                    'src/shape/BoundBox.js',
+                    'src/shape/Selector.js',
+                    'src/shape/Anchor.js',
+                    'src/shape/Image.js',
+                    'src/shape/Label.js',
+                    'src/shape/Shape.js',
+                    'src/shape/Compartment.js',
+                    'src/connection/Arrows.js',
+                    'src/connection/Anchor.js',
+                    'src/connection/ConnectionEnd.js',
+                    'src/connection/ConnectionLabel.js',
+                    'src/connection/Connection.js',
+                    'src/palette/Palette.js',
                     'build/end.js'
                 ],
                 dest: 'dist/diagrams.js'
@@ -53,6 +56,13 @@ module.exports = function(grunt) {
 
         },
 
+        jsdoc: {
+            dist: {
+                src: ['src/**/*.js'],
+                dest: 'doc/api'
+            }
+        },
+
         min: {
             dist: {
                 src: ['dist/diagrams.js'],
@@ -63,8 +73,9 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks('grunt-mocha');
+    grunt.loadNpmTasks('grunt-jsdoc-plugin');
 
     grunt.registerTask('test', 'concat mocha');
-    grunt.registerTask('build', 'concat mocha min');
+    grunt.registerTask('build', 'concat mocha jsdoc min');
 
 };
