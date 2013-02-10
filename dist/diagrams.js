@@ -19,134 +19,6 @@
 
 
 
-// Point
-//
-
-var Point = function Point( x, y ) {
-    var xy;
-    if (y === undefined){
-        // from string
-        xy = x.split(x.indexOf("@") === -1 ? " " : "@");
-        this.x = parseInt(xy[0], 10);
-        this.y = parseInt(xy[1], 10);
-    } else {
-        this.x = x;
-        this.y = y;
-    }
-};
-
-Point.get = function(paper, e) {
-    // IE:
-    if (window.event && window.event.contentOverflow !== undefined) {
-        return new Point(window.event.x, window.event.y);
-    }
-
-    // Webkit:
-    if (e.offsetX !== undefined && e.offsetY !== undefined) {
-        return new Point(e.offsetX, e.offsetY);
-    }
-
-    // Firefox:
-    // get position relative to the whole document
-    // note that it also counts on scrolling (as opposed to clientX/Y).
-    var pageX = e.pageX;
-    var pageY = e.pageY;
-
-    // SVG's element parent node is world
-    var el = paper.canvas.parentNode;
-
-    // get position of the paper element relative to its offsetParent
-    var offsetLeft = el ? el.offsetLeft : 0;
-    var offsetTop = el ? el.offsetTop : 0;
-    var offsetParent = el ? el.offsetParent : 0;
-
-    var offsetX = pageX - offsetLeft;
-    var offsetY = pageY - offsetTop;
-
-    // climb up positioned elements to sum up their offsets
-    while (offsetParent) {
-        offsetX += offsetParent.offsetLeft;
-        offsetY += offsetParent.offsetTop;
-        offsetParent = offsetParent.offsetParent;
-    }
-
-    return new Point(offsetX, offsetY);
-};
-
-
-
-// Line
-//
-
-var Line = function(paper, p1, p2) {
-    this.paper = paper;
-    this.start = p1;
-    this.end = p2;
-    this.wrapper = paper.path('M'+this.start.x+','+this.start.y+'L'+this.end.x+','+this.end.y);
-    return this;
-};
-
-Line.prototype.attr = function() {
-    return Raphael.el.attr.apply(this.wrapper, arguments);
-};
-
-Line.prototype.remove = function() {
-    this.wrapper.remove();
-};
-
-// Find point of intersection between two lines
-Line.prototype.intersection = function(line) {
-    var pt1Dir = { x: this.end.x - this.start.x, y: this.end.y - this.start.y },
-        pt2Dir = { x: line.end.x - line.start.x, y: line.end.y - line.start.y },
-        det = (pt1Dir.x * pt2Dir.y) - (pt1Dir.y * pt2Dir.x),
-        deltaPt = { x: line.start.x - this.start.x, y: line.start.y - this.start.y },
-        alpha = (deltaPt.x * pt2Dir.y) - (deltaPt.y * pt2Dir.x),
-        beta = (deltaPt.x * pt1Dir.y) - (deltaPt.y * pt1Dir.x);
-
-    if (det === 0 || alpha * det < 0 || beta * det < 0) {
-        return null;    // no intersection
-    }
-
-    if (det > 0) {
-        if (alpha > det || beta > det) {
-            return null;
-        }
-    } else {
-        if (alpha < det || beta < det) {
-            return null;
-        }
-    }
-
-    return {
-        x: this.start.x + (alpha * pt1Dir.x / det),
-        y: this.start.y + (alpha * pt1Dir.y / det)
-    };
-};
-
-// Find intersection point with a box.
-Line.prototype.findIntersection = function( box ) {
-    var points = [
-        { p1: box.topLeft, p2: box.topRight },
-        { p1: box.topLeft, p2: box.bottomLeft },
-        { p1: box.bottomLeft, p2: box.bottomRight },
-        { p1: box.bottomRight, p2: box.topRight }
-    ];
-
-    for (var i = 0; i < points.length; i++) {
-        var boxLine = new Line(this.paper, points[i].p1, points[i].p2);
-        var intersection = this.intersection( boxLine );
-        boxLine.remove();
-
-        if (intersection) {
-            return intersection;
-        }
-    }
-
-    return null;
-};
-
-
-
 // Raphael extensions for Diagrams.js.
 
 var isNatural = function(number) {
@@ -183,52 +55,73 @@ Raphael.el.y = function () {
     }
 };
 
-Raphael.el.rdxy = function(dx, dy, direction) {
+var resizeEllipse = function(dx, dy, direction, min, limits) {
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        dy = -dy;
+    }
+    if (_.include(['nw', 'sw', 'n'], direction)) {
+        dx = -dx;
+    }
+    var sumx = this.orx + dx;
+    var sumy = this.orx + dy;
+    return {
+        rx: isNatural(sumx) ? sumx : this.orx,
+            ry: isNatural(sumy) ? sumy : this.ory
+    };
+};
+
+var resizeCircle = function(dx, dy, direction, min, limits) {
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        dy = -dy;
+    }
+    var sumr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
+    return {
+        r: isNatural(sumr) ? sumr : this.or
+    };
+};
+
+var resizeRect = function(dx, dy, direction, min, limits) {
+    var x = this.ox, y = this.oy, w = this.ow, h = this.oh;
+
+    if (direction !== 'n' && direction !== 's') {
+        w = this.ow + dx;
+    }
+    if (direction !== 'w' && direction !== 'e') {
+        h = this.oh + dy;
+    }
+    if (_.include(['sw', 'nw', 'w'], direction)) {
+        w = this.ow - dx;
+        if (w < min.width) {
+            dx = dx - (min.width - w);
+        }
+        x = this.ox + dx;
+    }
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        h = this.oh - dy;
+        if (h < min.height) {
+            dy = dy - (min.height - h);
+        }
+        y = this.oy + dy;
+    }
+
+    if (h < min.height) h = min.height;
+    if (w < min.width) w = min.width;
+    if (w > limits.width) w = limits.width;
+    if (h > limits.height) h = limits.height;
+    if (x < limits.x) x = limits.x;
+    if (y < limits.y) y = limits.y;
+
+    return { width: w, height: h, y: y, x: x };
+};
+
+Raphael.el.rdxy = function(dx, dy, direction, min, limits) {
     switch (this.type) {
     case 'ellipse':
-        if (direction === 'ne' || direction === 'nw') {
-            dy = -dy;
-        }
-        if (direction === 'nw' || direction === 'sw') {
-            dx = -dx;
-        }
-        var sumx = this.orx + dx;
-        var sumy = this.orx + dy;
-        return {
-            rx: isNatural(sumx) ? sumx : this.orx,
-            ry: isNatural(sumy) ? sumy : this.ory
-        };
+        return resizeEllipse.apply(this, [dx, dy, direciton, min, limits]);
     case 'circle':
-        if (direction === 'ne' || direction === 'nw') {
-            dy = -dy;
-        }
-        var sumr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
-        return {
-            r: isNatural(sumr) ? sumr : this.or
-        };
+        return resizeCircle.apply(this, [dx, dy, direction, min, limits]);
     case 'rect':
-        var w = this.ow + dx;
-        if (direction === 'nw' || direction === 'sw') {
-            w = this.ow - dx;
-        }
-        var h = this.oh + dy;
-        if (direction === 'ne' || direction === 'nw') {
-            h = this.oh - dy;
-        }
-        var y = this.oy;
-        var x = this.ox;
-        if (direction === 'sw' || direction === 'nw') {
-            x = this.ox + dx;
-        }
-        if (direction === 'ne' || direction === 'nw') {
-            y = this.oy + dy;
-        }
-        return {
-            width: isNatural(w) ? w : this.ow,
-            height: isNatural(h) ? h : this.oh,
-            y: y,
-            x: x
-        };
+        return resizeRect.apply(this, [dx, dy, direction, min, limits]);
     default:
         return {};
     }
@@ -301,7 +194,7 @@ Raphael.el.getABox = function() {
     o.bottomRight = { x: o.xRight,    y: o.yBottom };
 
     // corners
-    o.top     = { x: o.xCenter,   y: o.yTop };
+    o.top         = { x: o.xCenter,   y: o.yTop };
     o.bottom      = { x: o.xCenter,   y: o.yBottom };
     o.left        = { x: o.xLeft,     y: o.yMiddle };
     o.right       = { x: o.xRight,    y: o.yMiddle };
@@ -313,13 +206,182 @@ Raphael.el.getABox = function() {
 };
 
 // Polyline support.
-Raphael.fn.polyline = function (x,y) {
-    var poly = ['M',x,y,'L'];
-    for (var i=2;i<arguments.length;i++) {
+Raphael.fn.polyline = function(x,y) {
+    var poly = ['M', x, y, 'L'];
+    for (var i = 2; i < arguments.length; i++) {
         poly.push(arguments[i]);
     }
     return this.path(poly.join(' '));
 };
+
+// Triangles
+Raphael.fn.triangle = function(x, y, size) {
+  var path = ["M", x, y];
+  path = path.concat(["L", (x + size / 2), (y + size)]);
+  path = path.concat(["L", (x - size / 2), (y + size)]);
+  return this.path(path.concat(["z"]).join(" "));
+};
+
+
+/**
+ * @name Point
+ *
+ * @class Represents a 2D Point.
+ *
+ * @param {Integer} x
+ * @param {Integer} y
+ * @api public
+ *
+ */
+
+var Point = function Point( x, y ) {
+    var xy;
+    if (y === undefined){
+        // from string
+        xy = x.split(x.indexOf("@") === -1 ? " " : "@");
+        this.x = parseInt(xy[0], 10);
+        this.y = parseInt(xy[1], 10);
+    } else {
+        this.x = x;
+        this.y = y;
+    }
+};
+
+/**
+ * Returns the Point corresponding to a MouseEvent.
+ *
+ * @param {Raphael} current Raphael object
+ * @param {MouseEvent} mouse event from which obtain the point
+ * @api public
+ */
+
+Point.get = function(paper, e) {
+    // IE:
+    if (window.event && window.event.contentOverflow !== undefined) {
+        return new Point(window.event.x, window.event.y);
+    }
+
+    // Webkit:
+    if (e.offsetX !== undefined && e.offsetY !== undefined) {
+        return new Point(e.offsetX, e.offsetY);
+    }
+
+    // Firefox:
+    // get position relative to the whole document
+    // note that it also counts on scrolling (as opposed to clientX/Y).
+    var pageX = e.pageX;
+    var pageY = e.pageY;
+
+    // SVG's element parent node is world
+    var el = paper.canvas.parentNode;
+
+    // get position of the paper element relative to its offsetParent
+    var offsetLeft = el ? el.offsetLeft : 0;
+    var offsetTop = el ? el.offsetTop : 0;
+    var offsetParent = el ? el.offsetParent : 0;
+
+    var offsetX = pageX - offsetLeft;
+    var offsetY = pageY - offsetTop;
+
+    // climb up positioned elements to sum up their offsets
+    while (offsetParent) {
+        offsetX += offsetParent.offsetLeft;
+        offsetY += offsetParent.offsetTop;
+        offsetParent = offsetParent.offsetParent;
+    }
+
+    return new Point(offsetX, offsetY);
+};
+
+
+
+/**
+ * @name Line
+ * @class Basic representation of a Line
+ *
+ */
+
+var Line = function(paper, p1, p2) {
+    this.paper = paper;
+    this.start = p1;
+    this.end = p2;
+    this.wrapper = paper.path('M'+this.start.x+','+this.start.y+'L'+this.end.x+','+this.end.y);
+    return this;
+};
+
+/**
+ * Wrapper method for Raphael#attr
+ */
+
+Line.prototype.attr = function() {
+    return Raphael.el.attr.apply(this.wrapper, arguments);
+};
+
+/**
+ * Removes the Line from the canvas
+ */
+
+Line.prototype.remove = function() {
+    this.wrapper.remove();
+};
+
+/**
+ * Find point of intersection between two lines
+ */
+
+Line.prototype.intersection = function(line) {
+    var pt1Dir = { x: this.end.x - this.start.x, y: this.end.y - this.start.y },
+        pt2Dir = { x: line.end.x - line.start.x, y: line.end.y - line.start.y },
+        det = (pt1Dir.x * pt2Dir.y) - (pt1Dir.y * pt2Dir.x),
+        deltaPt = { x: line.start.x - this.start.x, y: line.start.y - this.start.y },
+        alpha = (deltaPt.x * pt2Dir.y) - (deltaPt.y * pt2Dir.x),
+        beta = (deltaPt.x * pt1Dir.y) - (deltaPt.y * pt1Dir.x);
+
+    if (det === 0 || alpha * det < 0 || beta * det < 0) {
+        return null;    // no intersection
+    }
+
+    if (det > 0) {
+        if (alpha > det || beta > det) {
+            return null;
+        }
+    } else {
+        if (alpha < det || beta < det) {
+            return null;
+        }
+    }
+
+    return {
+        x: this.start.x + (alpha * pt1Dir.x / det),
+        y: this.start.y + (alpha * pt1Dir.y / det)
+    };
+};
+
+/**
+ * Find intersection point with a box.
+ */
+
+Line.prototype.findIntersection = function( box ) {
+    var points = [
+        { p1: box.topLeft, p2: box.topRight },
+        { p1: box.topLeft, p2: box.bottomLeft },
+        { p1: box.bottomLeft, p2: box.bottomRight },
+        { p1: box.bottomRight, p2: box.topRight }
+    ];
+
+    for (var i = 0; i < points.length; i++) {
+        var boxLine = new Line(this.paper, points[i].p1, points[i].p2);
+        var intersection = this.intersection( boxLine );
+        boxLine.remove();
+
+        if (intersection) {
+            return intersection;
+        }
+    }
+
+    return null;
+};
+
 
 // Events
 
@@ -432,46 +494,21 @@ var Events = Ds.Events = {
 };
 
 
-Ds.arrows = {
 
-    none: function( size ) {
-        if (!size) {
-            size = 2;
-        }
-        return {
-            path: 'M'+size+',0L'+(-size)+',0',
-            dx: size,
-            dy: size,
-            attr: {
-                opacity: 0
-            }
-        };
-    },
-
-    basic: function( p, size ) {
-        if (!size) {
-            size = 4;
-        }
-        return {
-            path: [
-                'M',size.toString(),'0',
-                'L',(-size).toString(),(-size).toString(),
-                'L',(-size).toString(),size.toString(),'z'
-            ],
-            dx: size,
-            dy: size,
-            attr: {
-                stroke: 'black',
-                fill: 'black'
-            }
-        };
-    }
-};
-
-
-
-// Element
-//
+/**
+ * @name Element
+ * @class Represents the base concept in diagrams.js. Element is
+ * abstract and not intended to be instanciated but beings extended via
+ * the extend method
+ *
+ * @example
+ *
+ * var MyClass = Ds.Element.extend({
+ *      constructor: function(attributes) {
+ *      }
+ * });
+ *
+ */
 
 var Element = Ds.Element = function (attributes) {
     if (!attributes) attributes = {};
@@ -530,36 +567,42 @@ Element.extend = extend;
 
 Element.prototype = {
 
+    /**
+     * Method called after instanciation of an object
+     */
+
     initialize: function() {},
 
-    // Returns `true` if the attribute contains a value that is not null
-    // or undefined.
-    //
-    // @return {Boolean}
-    // @api public
+    /**
+     * Returns `true` if the attribute contains a value that is not null
+     * or undefined.
+     *
+     * @return {boolean}
+     */
 
     has: function( attr ) {
         return this.attributes[attr] != null;
     },
 
-    // Returns the value of an attribute.
-    //
-    // @param {String}
-    // @return {Object}
-    // @api public
+    /**
+     * Returns the value of an attribute.
+     *
+     * @param {string}
+     * @return {object}
+     */
 
     get: function( attr ) {
         return this.attributes[attr];
     },
 
-    // Sets the value of an attribute.
-    //
-    // @param {String} key
-    // @param {String} value
-    // or
-    // @param {Object}
-    //
-    // @api public
+    /**
+     * Sets the value of an attribute.
+     *
+     * @param {string} key
+     * @param {string} value
+     * or
+     * @param {object}
+     */
 
     set: function( key, value ) {
         var attrs;
@@ -577,10 +620,11 @@ Element.prototype = {
         return this;
     },
 
-    // Return a JSON representation.
-    //
-    // @return {Object}
-    // @api public
+    /**
+     * Return the JSON representation of an Element.
+     *
+     * @return {object}
+     */
 
     toJSON: function() {
         var attributes = this.attributes,
@@ -589,10 +633,12 @@ Element.prototype = {
         return this._deepClone(clone);
     },
 
-    // Clone internal representation of the Element.
-    //
-    // @param {Object} clone
-    // @api private
+    /**
+     * Clone internal representation of the Element.
+     *
+     * @param {object} clone
+     * @private
+     */
 
     _deepClone: function( clone ) {
         for (var key in clone) {
@@ -628,13 +674,16 @@ var raphaelAttributes = Raphael._availableAttrs,
 // text must be added as an available attribute.
 raphaelAttributes.text = '';
 
-// DiagramElement
-//
-// Element that is part of a Diagram (Shape, Connection). A DiagramElement is defined
-// by a figure and is identified by a unique id.
-//
 
-var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
+/**
+ * @name DiagramElement
+ * @class Element that is part of a Diagram (Shape, Connection).
+ * A DiagramElement is defined by a figure and is identified by a unique id.
+ * @augments Element
+ *
+ */
+
+var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramElement.prototype */ {
 
     constructor: function(attributes) {
         Ds.Element.apply(this, [attributes]);
@@ -647,7 +696,9 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
         this._initAttributes(attributes);
     },
 
-    // Private
+    /**
+     * @private
+     */
 
     _initAttributes: function(attributes) {
         var key;
@@ -682,16 +733,26 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
         }
     },
 
-    // Public
+    /**
+     * Renders the element on the canvas.
+     */
 
     render: function() {
         return this;
     },
 
+    /**
+     * Removes the element from the canvas.
+     */
+
     remove: function() {
         if (this.wrapper) this.wrapper.remove();
         return this;
     },
+
+    /**
+     * Returns the Raphael instance for this DiagramElement
+     */
 
     paper: function() {
         if (!this.diagram && this.parent) {
@@ -703,6 +764,13 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
         return this.diagram.paper();
     },
 
+    /**
+     * Setter method
+     *
+     * @param {string} key
+     * @param {object} value
+     */
+
     set: function(key, value) {
         var attrs;
 
@@ -713,7 +781,7 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
         }
 
         if (this.wrapper) {
-            if (attrs.type === 'circle') {
+            if (this.wrapper.type === 'circle') {
                 if (attrs.x) attrs.cx = attrs.x;
                 if (attrs.y) attrs.cy = attrs.y;
             }
@@ -727,82 +795,41 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend({
         return this;
     },
 
+    setParent: function(parentShape) {
+        this.parent = parentShape;
+        if (!this.diagram) {
+            this.diagram = parentShape.diagram;
+        }
+        return this;
+    },
+
+    /**
+     * Show the DiagramElement if previously hidden
+     */
+
     show: function() {
         if (this.wrapper) this.wrapper.show();
         return this;
     },
+
+    /**
+     * Hide the DiagramElement
+     */
 
     hide: function() {
         if (this.wrapper) this.wrapper.hide();
         return this;
     },
 
+    /**
+     * Bring the DiagramElement on top of other elements
+     */
+
     toFront: function() {
         if (this.wrapper) this.wrapper.toFront();
         return this;
-    },
-
-    bounds: function() {
-        var x = this.get('x'),
-            y = this.get('y'),
-            w = this.get('width'),
-            h = this.get('height');
-
-        return { x: x, y: y, width: w, height: h };
-    },
-
-    preferredSize: function() {
-        var min = this.minimumSize(),
-            w = this.get('width'),
-            h = this.get('height');
-
-        if (!w) w = this.parent.get('width');
-        if (!h) h = this.parent.get('height');
-
-        if (this.children) {
-            var ch = _.reduce(this.children, function(m, n) {
-                return m + n.preferredSize().height;
-            }, 0);
-            if (ch > 0 && ch > h) h = ch;
-        }
-
-        if (min.width > w) w = min.width;
-        if (min.height > h) h = min.height;
-
-        return { width: w, height: h };
-    },
-
-    minimumSize: function() {
-        var w = this.has('min-width') ? this.get('min-width') : this.get('width'),
-            h = this.has('min-height') ? this.get('min-height') : this.get('height'),
-            pms = this.parent ? this.parent.minimumSize() : null;
-
-        if (!w && pms) {
-            w = pms.width;
-            this.set('min-width', w);
-        }
-        if (!h && pms) {
-            h = pms.height;
-            this.set('min-height', h);
-        }
-
-        return { width: w, height: h };
-    },
-
-    maximumSize: function() {
-
-    },
-
-    doLayout: function() {
-        if (!this.layout && this.parent && this.parent.layout) {
-            this.layout = { type: this.parent.layout.type };
-            this.layout = createLayout(this);
-        }
-        if (this.layout) {
-            this.set(this.layout.size());
-            this.layout.layout();
-        }
     }
+
 });
 
 function createFigure(shape) {
@@ -843,43 +870,224 @@ function isCompartment(shape) {
 }
 
 
+/**
+ * @name Layout
+ * @class Abstract representation of a Layout
+ *
+ */
+
+var Layout = function(shape, attributes) {
+    this.shape = shape;
+    this.type = attributes.type;
+};
+
+Layout.extend = extend;
+
+Layout.prototype = {
+
+    /**
+     * Executes the layout algorithm
+     */
+
+    layout: function() {}
+};
+
+function createLayout(shape) {
+    var options = shape.layout,
+        type = options ? options.type : null;
+
+    return (function() {
+        switch (type) {
+            case 'xy':
+                return new XYLayout(shape, options);
+            case 'flow':
+                return new FlowLayout(shape, options);
+            case 'grid':
+                return new GridLayout(shape, options);
+            case 'flex':
+                return new FlexGridLayout(shape, options);
+            case 'border':
+                return new BorderLayout(shape, options);
+            default:
+                return null;
+        }
+    })();
+}
 
 
-// Diagram
-//
-//      var d = new Ds.Diagram('canvas');
-//      var d = new Ds.Diagram(document.getElementById('canvas'));
-//      var d = new Ds.Diagram('canvas', 1000, 800);
-//
-//      var D = Diagram.extend({
-//          el: 'canvas',
-//          width: 1000,
-//          height: 800,
-//          children: [
-//              SomeRootShape,
-//              AnotherRootShape
-//          ]
-//      });
-//
-//      var d = new D();
-//
-// The element can be set after the instance of Diagram is created,
-// but before the call to render.
-//
-//      d.setElement('canvas');
-//      d.setElement(document.getElementById('canvas'));
-//
-// This returns the HTMLElement:
-//
-//      d.el;
-//
-// Call render will display all shapes and connections of the diagram.
-//
-//      d.render();
+/**
+ * @name LayoutElement
+ * @class Represents a DiagramElement with Layouting capabilities. A Layout object
+ * must be attached to the element via the layout property.
+ *
+ * @augments DiagramElement
+ *
+ */
 
-Ds.Diagram = Ds.Element.extend({
+var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends LayoutElement.prototype */ {
 
     constructor: function(attributes) {
+        Ds.DiagramElement.apply(this, [attributes]);
+
+        this.initialize(attributes);
+    },
+
+    /**
+     * Returns the element's position and size as an object with
+     * properties x, y, with and height.
+     *
+     * @example
+     *  var element = new DiagramElement(...);
+     *  var bounds = element.bounds();
+     *  // bounds => { x: 10, y: 10, width: 50, height: 50 }
+     *
+     * @return {object} bounds
+     */
+
+    bounds: function() {
+        if (this.wrapper) {
+            return this.wrapper.getABox();
+        } else {
+            var x = this.get('x'),
+                y = this.get('y'),
+                w = this.get('width'),
+                h = this.get('height');
+
+            return { x: x, y: y, width: w, height: h };
+        }
+    },
+
+    /**
+     * Returns the element's preferred size, as an object
+     * with the properties width and height. The preferred size
+     * is calculated according to the element's size and the preferred
+     * size of it's children.
+     *
+     * @return {object}
+     */
+
+    preferredSize: function() {
+        var min = this.minimumSize(),
+            w = this.get('width'),
+            h = this.get('height');
+
+        if (!w) w = this.parent.get('width');
+        if (!h) h = this.parent.get('height');
+
+        if (this.children) {
+            var ch = _.reduce(this.children, function(m, n) {
+                return m + n.preferredSize().height;
+            }, 0);
+            if (ch > 0 && ch > h) h = ch;
+        }
+
+        if (min.width > w) w = min.width;
+        if (min.height > h) h = min.height;
+
+        return { width: w, height: h };
+    },
+
+    /**
+     * Returns the element's minimum size, as an object
+     * with the properties width and height. The minimum size
+     * is calculated according to the element's size and the minimum
+     * size of it's children.
+     *
+     * @return {object}
+     */
+
+    minimumSize: function() {
+        var w = this.has('min-width') ? this.get('min-width') : this.get('width'),
+            h = this.has('min-height') ? this.get('min-height') : this.get('height'),
+            pms = this.parent ? this.parent.minimumSize() : null;
+
+        if (!w && pms) {
+            w = pms.width;
+            this.set('min-width', w);
+        }
+        if (!h && pms) {
+            h = pms.height;
+            this.set('min-height', h);
+        }
+
+        return { width: w, height: h };
+    },
+
+    /**
+     * Returns the element's maximum size, as an object
+     * with the properties width and height. The maximum size
+     * is calculated according to the element's size and the maximum
+     * size of it's children.
+     *
+     * @return {object}
+     */
+
+    maximumSize: function() {
+
+    },
+
+    /**
+     * Performs the layout of the elemet by calling the layout method of
+     * the Layout object associated to the element.
+     */
+
+    doLayout: function() {
+        if (!this.layout) return;
+
+        this.set(this.layout.size());
+        this.layout.layout();
+    }
+
+});
+
+
+/**
+ *  Diagram.
+ *
+ *  @name Diagram
+ *
+ *  @class Represents a Diagram
+ *
+ *  @example
+ *
+ *  // Creates a new diagram
+ *  var d = new Ds.Diagram('canvas');
+ *  var d = new Ds.Diagram(document.getElementById('canvas'));
+ *  var d = new Ds.Diagram('canvas', 1000, 800);
+ *
+ *  var D = Diagram.extend({
+ *      el: 'canvas',
+ *      width: 1000,
+ *      height: 800,
+ *      children: [
+ *          SomeRootShape,
+ *          AnotherRootShape
+ *      ]
+ *  });
+ *
+ *  var d = new D();
+ *
+ * The element can be set after the instance of Diagram is created,
+ * but before the call to render.
+ *
+ *  d.setElement('canvas');
+ *  d.setElement(document.getElementById('canvas'));
+ *
+ * This returns the HTMLElement:
+ *
+ *  d.el;
+ *
+ * Call render will display all shapes and connections of the diagram.
+ *
+ *  d.render();
+ *
+ */
+
+Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
+
+    constructor: function(attributes) {
+        if (!attributes) attributes = {};
+
         Ds.Element.apply(this, [attributes]);
 
         this._selection = null;
@@ -888,24 +1096,34 @@ Ds.Diagram = Ds.Element.extend({
 
         this.set('edges', []);
 
+        if (attributes.el) this.el = attributes.el;
         if (this.el) this.setElement(this.el);
 
         this.initialize(attributes);
     },
 
-    // Returns the Raphael instance associated to the diagram.
-    //
+    /**
+     * Returns the current Raphael object.
+     *
+     * @name paper
+     * @function
+     * @memberOf Ds.Diagram
+     * @returns {Raphael}
+     */
 
     paper: function() {
-        if (!this._paper) {
-            this._initPaper();
-        }
+        if (!this._paper) this._initPaper();
         return this._paper;
     },
 
-    // Sets the HTML Element that will contain the diagram.
-    //
-    // The parameter can be a string, or an HTMLElement.
+    /**
+     * Sets the HTML Element that will contain the diagram.
+     * The parameter can be a string, or an HTMLElement.
+     *
+     * @name setElement
+     * @param {HTMLElement}
+     * @param {String}
+     */
 
     setElement: function(el) {
         if (!el) return this;
@@ -913,44 +1131,80 @@ Ds.Diagram = Ds.Element.extend({
         if (_.isString(el)) {
             var id = el.indexOf('#') === 0 ? el.slice(1, el.length) : el;
             this.el = document.getElementById(id);
-        } else if (element instanceof HTMLElement) {
+        } else if (el instanceof HTMLElement) {
             this.el = el;
         }
 
         return this;
     },
 
-    // Returns the SVG Element containing the diagram.
+    /**
+     * Returns the SVG Element containing the diagram.
+     *
+     * @name canvas
+     * @return {SVGObject} canvas
+     */
 
     canvas: function() {
         return this._paper ? this._paper.canvas : null;
     },
 
-    // Renders the content of the diagram.
+    /**
+     * Renders the content of the diagram.
+     *
+     */
 
     render: function() {
         // Insures the Raphael object is ready.
-        this.paper();
+        var paper = this.paper();
+        var canvas = paper.canvas;
+        var x = canvas.clientLeft;
+        var y = canvas.clientTop;
+        var width = canvas.clientWidth;
+        var height = canvas.clientHeight;
 
-        _.each(this.get('children'), function(child) {
-            child.render();
+        // creates wrapper that will receive events
+        this.wrapper = this.paper().rect(x, y, width, height, 0).attr({
+            fill: 'white', opacity: 0, stroke: 'none'
         });
 
-        _.each(this.get('edges'), function(edge) {
-            edge.render();
-        });
+        this.setEvents();
+        _.each(this.get('children'), function(child) { child.render(); });
+        _.each(this.get('edges'), function(edge) { edge.render(); });
+
+        this.on('click', this.deselect, this);
+        this.on('click', this.handleTextInput, this);
 
         return this;
     },
+
+    /**
+     * @private
+     */
+
+    setEvents: function() {
+        if (!this.wrapper) return;
+
+        var me = this;
+        this.wrapper.click(function(e) { me.trigger('click'); });
+    },
+
+    /**
+     * Zoom
+     *
+     * @param String
+     */
 
     zoom: function(direction) {
 
     },
 
-    // Clears the content of the diagram.
-    //
-    // This methods does not remove the content of the diagram,
-    // only
+    /**
+     * Clears the content of the diagram.
+     *
+     * This methods does not remove the content of the diagram,
+     * only
+     */
 
     remove: function() {
         if (this._paper) {
@@ -960,6 +1214,13 @@ Ds.Diagram = Ds.Element.extend({
             this._paper = null;
         }
     },
+
+    /**
+     *
+     * @param Function
+     * @param Object
+     * @return Shape
+     */
 
     createShape: function(func, attributes) {
         var shape = null,
@@ -975,6 +1236,10 @@ Ds.Diagram = Ds.Element.extend({
         return shape;
     },
 
+    /**
+     * @param Shape
+     */
+
     removeShape: function(shape) {
         if (!shape) return;
 
@@ -985,6 +1250,11 @@ Ds.Diagram = Ds.Element.extend({
         this.trigger('remove:children', shape);
     },
 
+    /**
+     * @param Integer
+     * @return Shape
+     */
+
     getShape: function(id) {
         if (!id) return null;
 
@@ -994,6 +1264,12 @@ Ds.Diagram = Ds.Element.extend({
 
         return shape;
     },
+
+    /**
+     * @param Function
+     * @param Object
+     * @return Connection
+     */
 
     createConnection: function(func, attributes) {
         if (typeof func !== 'function') return;
@@ -1017,6 +1293,10 @@ Ds.Diagram = Ds.Element.extend({
         return connection;
     },
 
+    /**
+     * @param Connection
+     */
+
     removeConnection: function(connection) {
         if (!connection) return;
 
@@ -1027,6 +1307,11 @@ Ds.Diagram = Ds.Element.extend({
 
         this.trigger('remove:edges', connection);
     },
+
+    /**
+     * @param Integer
+     * @return Connection
+     */
 
     getConnection: function(id) {
         if (!id) return null;
@@ -1041,7 +1326,12 @@ Ds.Diagram = Ds.Element.extend({
         return connection;
     },
 
-    canConnect: function( node ) {
+    /**
+     * @param Shape
+     * @return Boolean
+     */
+
+    canConnect: function(node) {
         if (this.currentEdge) {
             if (this.currentSource) {
                 return true;
@@ -1054,7 +1344,11 @@ Ds.Diagram = Ds.Element.extend({
         }
     },
 
-    connect: function( node ) {
+    /**
+     * @param Shape
+     */
+
+    connect: function(node) {
         var connection = null;
 
         if (this.currentEdge) {
@@ -1072,6 +1366,8 @@ Ds.Diagram = Ds.Element.extend({
     },
 
     handleTextInput: function() {
+        if (!this.inputText) return;
+
         var text = this.inputText.value;
         if (text) {
             this.modifiedLabel.setText(text);
@@ -1081,21 +1377,17 @@ Ds.Diagram = Ds.Element.extend({
             this.inputText = null;
         }
         if (this.repeatInputClick) {
-            if (this.modifiedLabel) {
-                this.modifiedLabel.textForm.parentNode.removeChild(this.modifiedLabel.textForm);
-                this.modifiedLabel.textForm = null;
-                this.modifiedLabel = null;
-                this.inputText = null;
-                this.repeatInputClick = false;
-            }
+            this.repeatInputClick = false;
         } else {
             this.repeatInputClick = true;
         }
     },
-
+/*
     handleEvent: function(e) {
-        var position = Point.get(this._paper, e);
-        var el = this._paper.getElementsByPoint(position.x, position.y);
+        if (e && e.type) this.trigger(e.type, e);
+
+        var position = Point.get(this.paper(), e);
+        var el = this.paper().getElementsByPoint(position.x, position.y);
 
         if (el.length === 0 && this._selection) {
             this._selection.deselect();
@@ -1108,6 +1400,13 @@ Ds.Diagram = Ds.Element.extend({
 
         if (el.length === 0 && this.currentEdge) {
             this.currentEdge = null;
+        }
+    },
+*/
+    deselect: function() {
+        if (this._selection && typeof this._selection.deselect === 'function') {
+            this._selection.deselect();
+            delete this._selection;
         }
     },
 
@@ -1127,24 +1426,25 @@ Ds.Diagram = Ds.Element.extend({
 
     },
 
-    click: function(e) {
-
-    },
-
-    mouseover: function(e) {
-
+    getElementByPoint: function(point) {
+        var p = this.paper();
+        var el = p.getElementByPoint(point.x, point.y);
+        if (el && el.controller) {
+            return el.controller;
+        }
+        return null;
     },
 
     // Private methods
 
     _initPaper: function() {
-        if (!this.el) throw new Error('Cannot initialize Raphael Object, Diagram Element is missing, use setElement() before.');
+        if (!this.el)
+            throw new Error('Cannot initialize Raphael Object, Diagram Element is missing, use setElement() before.');
 
         if (this._paper) return;
 
         this._paper = Raphael(this.el, this.width, this.height);
         this._paper.setViewBox(0, 0, this._paper.width, this._paper.height);
-        this.canvas().addEventListener('click', this);
     },
 
     _canCreate: function( func ) {
@@ -1166,7 +1466,6 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
         Ds.DiagramElement.apply(this, [attributes]);
 
         this.element = attributes.element;
-        this.diagram = this.element.diagram;
         this.width = 70;
         this.height = 60;
     },
@@ -1180,7 +1479,7 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
             this.wrapper.remove();
         }
 
-        var paper = this.paper(),
+        var paper = this.element.paper(),
             box = this.element.wrapper.getABox(),
             x = box.xRight - 40,
             y = box.y - 30;
@@ -1204,7 +1503,7 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
         this.addItem(box.xLeft + 20, box.y, Trash, function(evt) {
             control.element.remove(true);
         });
-
+/*
         var propertyBox = this.propertyBox = new ToolBox.propertyBox({ diagram: control.diagram });
         if (ToolBox.propertyBox) {
             this.addItem(box.xLeft + 40, box.y + 20, Gear, function(evt) {
@@ -1214,13 +1513,13 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
                 propertyBox.render();
             });
         }
-
+*/
         return this;
     },
 
     addItem: function(x, y, text, action) {
         var control = this;
-        var paper = this.paper();
+        var paper = this.element.paper();
         var wrapper = paper.path(text);
 
         wrapper.attr({fill: "#000", stroke: "none"});
@@ -1268,45 +1567,33 @@ var Gear = 'M26.834,14.693c1.816-2.088,2.181-4.938,1.193-7.334l-3.646,4.252l-3.5
 
 
 
-//
-// Layout
-//
+/**
+ * @name GridLayout
+ * @class Grid layout implementation that lays out the element's
+ * children in a grid and resizes each of them to the same size. This
+ * layout can be configured to work with a certain number of columns
+ * and rows.
+ * @example
+ * // This example shows how to create a Shape
+ * // with a 2x2 grid layout.
+ *
+ * var Shape = Ds.Shape.extend({
+ *  figure: {
+ *      ...
+ *  },
+ *  children: [ ... ],
+ *  layout: {
+ *      type: 'grid',
+ *      columns: 2,
+ *      rows: 2
+ *  }
+ * });
+ *
+ * @augments Layout
+ *
+ */
 
-var Layout = function(shape, attributes) {
-    this.shape = shape;
-    this.type = attributes.type;
-};
-Layout.extend = extend;
-
-Layout.prototype = {
-    layout: function() {}
-};
-
-function createLayout(shape) {
-    var layout = shape.layout,
-        type = layout ? layout.type : null;
-
-    return (function() {
-        switch (type) {
-            case 'xy':
-                return new XYLayout(shape, layout);
-            case 'flow':
-                return new FlowLayout(shape, layout);
-            case 'grid':
-                return new GridLayout(shape, layout);
-            case 'flex':
-                return new FlexGridLayout(shape, layout);
-            default:
-                return null;
-        }
-    })();
-}
-
-//
-// GridLayout
-//
-
-var GridLayout = Layout.extend({
+var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
 
     constructor: function(shape, attributes) {
         if (!attributes) attributes = {};
@@ -1315,10 +1602,16 @@ var GridLayout = Layout.extend({
         this.columns = attributes.columns;
         this.rows = attributes.rows || 0;
         this.vertical = attributes.vertical || false;
+        this.vgap = attributes.vgap || 0;
+        this.hgap = attributes.hgap || 0;
     },
 
+    /**
+     * Executes the layout algorithm
+     */
+
     layout: function() {
-        if (!this.shape.children) return;
+        if (!this.shape.children || !this.shape.children.length) return;
 
         var elements = this.shape.children,
             bounds = this.shape.bounds(),
@@ -1329,26 +1622,44 @@ var GridLayout = Layout.extend({
             width,
             height;
 
+        // determines the number of rows and columns
         if (rows > 0) {
             columns = Math.floor((elements.length + rows - 1) / rows);
         } else {
             rows = Math.floor((elements.length + columns - 1) / columns);
         }
 
-        width = (bounds.width - (columns - 1)) / columns;
-        height = (bounds.height - (rows - 1)) / rows;
+        // calculates elements sizes based on number of rows and columns
+        width = (bounds.width - (columns - 1) * this.hgap) / columns;
+        height = (bounds.height - (rows - 1) * this.vgap) / rows;
 
         for (var i = 0, j = 1; i < elements.length; i++, j++) {
             elements[i].set({ x: x, y: y, width: width, height: height });
 
-            if (j >= rows) {
-                x += width;
+            if (this.vertical) {
+                if (j >= rows) {
+                    x += width + this.hgap;
+                    y = bounds.y;
+                    j = 0;
+                } else {
+                    y += height + this.vgap;
+                }
             } else {
-                y += height;
+                if (j >= columns) {
+                    y += height + this.vgap;
+                    x = bounds.x;
+                    j = 0;
+                } else {
+                    x += width + this.hgap;
+                }
             }
             elements[i].doLayout();
         }
     },
+
+    /**
+     * Returns the size of the element associated to the layout
+     */
 
     size: function() {
         return this.shape.bounds();
@@ -1357,11 +1668,27 @@ var GridLayout = Layout.extend({
 });
 
 
-//
-// FlexGrid
-//
+/**
+ * @name FlexGrid
+ * @class FlexGrid layout implementation that lays out the element's
+ * children in a grid with flexible rows and columns sizes. The layout
+ * can be configured to accept any number of rows and columns.
+ * @example
+ *
+ * var Compartment = {
+ *      compartment: true,
+ *      figure: { ... },
+ *      layout: {
+ *          type: 'flex',
+ *          columns: 1,
+ *          stretch: false
+ *      }
+ * };
+ * @augments Layout
+ *
+ */
 
-var FlexGridLayout = Layout.extend({
+var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
 
     constructor: function(shape, attributes) {
         if (!attributes) attributes = {};
@@ -1369,8 +1696,12 @@ var FlexGridLayout = Layout.extend({
         this.columns = attributes.columns || 1;
         this.rows = attributes.rows || 0;
         this.vertical = attributes.vertical || false;
-        this.stretch = attributes.stretch;
+        this.stretch = attributes.stretch || false;
     },
+
+    /**
+     *  Executes the layout algorithm
+     */
 
     layout: function() {
         if (!this.shape.children || !this.shape.children.length) return;
@@ -1396,6 +1727,8 @@ var FlexGridLayout = Layout.extend({
         var w = zeros([], columns),
             h = zeros([], rows);
 
+        var add = function(m, n) { return m + n; };
+
         for (; i < elements.length; i++) {
             r = Math.floor(i / columns);
             c = i % columns;
@@ -1412,7 +1745,7 @@ var FlexGridLayout = Layout.extend({
             var ch, lh;
             // if last stretch on y
             if (this.stretch && i == elements.length - 1) {
-                ch = _.reduce(h, function(m, n){ return m + n; }, 0);
+                ch = _.reduce(h, add, 0);
                 lh = bounds.height - ch;
                 if (lh > 0) h[r] = lh;
             } else {
@@ -1424,8 +1757,8 @@ var FlexGridLayout = Layout.extend({
             for (r = 0, y = bounds.y; r < rows; r++) {
                 i = r * columns + c;
                 if (i < elements.length) {
-                    console.log(elements[i], x, y);
                     elements[i].set({ x: x, y: y, width: w[c], height: h[r] });
+                    console.log(elements[i], x, y, w[c], h[r]);
                     elements[i].doLayout();
                 }
                 y += h[r];
@@ -1433,6 +1766,10 @@ var FlexGridLayout = Layout.extend({
             x += w[c];
         }
     },
+
+    /**
+     * Returns the size of the element associated to the layout
+     */
 
     size: function() {
         var shape = this.shape,
@@ -1485,17 +1822,26 @@ var zeros = function(a, l) {
 };
 
 
-//
-// FlowLayout
-//
+/**
+ * @name FlowLayout
+ * @class Flow Layout implementation that lays out the element's
+ * children on a row. If the children do not fit in the current row,
+ * additional rows are created.
+ * @augments Layout
+ *
+ */
 
-var FlowLayout = Layout.extend({
+var FlowLayout = Layout.extend(/** @lends FlowLayout.prototype */ {
 
     constructor: function(shape, attributes) {
         if (!attributes) attributes = {};
         Layout.apply(this, [shape, attributes]);
         this.vertical = attributes.vertical;
     },
+
+    /**
+     * Executes the layout algorithm
+     */
 
     layout: function() {
         var offset = { x: this.shape.get('x'), y: this.shape.get('y') },
@@ -1539,16 +1885,24 @@ var FlowLayout = Layout.extend({
         });
 
         align(currentRow, offset, elementSize, bounds);
-        console.log(size('preferred')(this.shape));
     },
 
+    /**
+     * Returns the size of the element associated to the layout
+     */
+
     size: function() {
-        var bounds = shape.bounds(),
-        i = 0,
-        width = 0,
-        height = 0,
-        first = false,
-        tSize;
+        var bounds = this.shape.bounds(),
+            elements = this.shape.children,
+            i = 0,
+            width = 0,
+            height = 0,
+            first = false,
+            tSize,
+            type = 'preferred';
+
+        if (!elements || !elements.length)
+            return { width: bounds.width, height: bounds.height };
 
         for (; i < elements.length; i++) {
             tSize = elements[i][type+'Size']();
@@ -1556,22 +1910,36 @@ var FlowLayout = Layout.extend({
             width += tSize.width;
         }
 
-        return { width: width + (elements.length - 1), height: height };
+        if (width < bounds.width) {
+            width = bounds.width;
+        }
+        if (height < bounds.height) {
+            height = bounds.height;
+        }
+
+        return { width: width, height: height };
     }
 
 });
 
 
-//
-// XYLayout
-//
+/**
+ * @name XYLayout
+ * @class A XYLayout implementation
+ * @augments Layout
+ *
+ */
 
-var XYLayout = Layout.extend({
+var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
 
     constructor: function(shape, attributes) {
         if (!attributes) attributes = {};
         Layout.apply(this, [shape, attributes]);
     },
+
+    /**
+     * Executes the layout algorithm
+     */
 
     layout: function() {
         var shape = this.shape,
@@ -1586,12 +1954,172 @@ var XYLayout = Layout.extend({
         }
     },
 
+    /**
+     * Returns the size of the element associated with the layout
+     */
+
     size: function() {
         return this.shape.bounds();
     }
 
 });
 
+
+
+/**
+ * @name BorderLayout
+ * @class Border Layout implementation that lays out the element's children in five different
+ * regions (north, west, center, east, south).
+ * @augments Layout
+ *
+ */
+var BorderLayout = Layout.extend(/** @lends BorderLayout.prototype */ {
+
+    constructor: function(shape, attributes) {
+        if (!attributes) attributes = {};
+        Layout.apply(this, [shape, attributes]);
+        this.vgap = attributes.vgap || 0;
+        this.hgap = attributes.hgap || 0;
+    },
+
+    /**
+     * Executes the layout algorithm
+     */
+
+    layout: function() {
+        var bounds = this.shape.bounds();
+        var top = bounds.y;
+        var bottom = bounds.bottomLeft.y;
+        var left = bounds.xLeft;
+        var right = bounds.xRight;
+        var tmpSize;
+
+        if (this.north) {
+            tmpSize = this.north.preferredSize();
+            this.north.set({ x: left, y: top, width: right - left, height: tmpSize.height });
+            this.north.doLayout();
+            top += tmpSize.height + this.vgap;
+        }
+
+        if (this.south) {
+            tmpSize = this.south.preferredSize();
+            this.south.set({ x: left, y: bottom - tmpSize.height, width: right - left, height: tmpSize.height });
+            this.south.doLayout();
+            bottom -= tmpSize.height + this.vgap;
+        }
+
+        if (this.east) {
+            tmpSize = this.east.preferredSize();
+            this.east.set({ x: right - tmpSize.width, y: top, width: tmpSize.width, height: bottom - top });
+            this.east.doLayout();
+            right -= tmpSize.width + this.hgap;
+        }
+
+        if (this.west) {
+            tmpSize = this.west.preferredSize();
+            this.west.set({ x: left, y: top, width: tmpSize.width, height: bottom - top });
+            this.west.doLayout();
+            left += tmpSize.width + this.hgap;
+        }
+
+        if (this.center) {
+            this.center.set({ x: left, y: top, width: right - left, height: bottom - top });
+            this.center.doLayout();
+        }
+    },
+
+
+    /**
+     * Returns the size of the element associated to the layout
+     */
+
+    size: function() {
+        return this.shape.bounds();
+    }
+
+});
+
+/**
+ * @name BoundBox
+ * @class Displays the shape's bounds when the shape is moved or resized.
+ * @augments DiagramElement
+ */
+
+Ds.BoundBox = Ds.DiagramElement.extend(/** @lends BoundBox.prototype */ {
+
+    constructor: function(attributes) {
+        Ds.DiagramElement.apply(this, [attributes]);
+        this.control = attributes.control;
+        this.control.on('start:move', this.stateMove, this);
+        this.control.on('start:resize', this.stateSize, this);
+        this.control.on('end:move end:resize', this.stateNone, this);
+    },
+
+    stateMove: function() {
+        this.state = 'move';
+        this._left = 'x';
+        this._right = 'y';
+    },
+
+    stateSize: function() {
+        this.state = 'resize';
+        this._left = 'width';
+        this._right = 'height';
+    },
+
+    stateNone: function() {
+        delete this.state;
+    },
+
+    render: function() {
+        this.remove();
+
+        var paper = this.control.paper();
+        var bounds = this.control.bounds();
+        var x = bounds.xRight + 15;
+        var y = bounds.yMiddle;
+
+        this.text = paper.text(x, y, this.getText());
+
+        var width = this.text.getABox().width;
+        this.text.translate(width / 2 + 10, 10);
+
+        this.shadow = paper.rect(x, y, width + 20, 20);
+        this.shadow.attr({ fill: 'black', opacity: 0.2, stroke: 'none' });
+        this.shadow.translate(2, 2);
+        this.wrapper = paper.rect(x, y, width + 20, 20);
+        this.wrapper.attr({ fill: '#FFFF99', opacity: 1, stroke: 'none' });
+
+        this.text.toFront();
+
+        return this;
+    },
+
+    remove: function() {
+        if (!this.wrapper) return;
+
+        this.wrapper.remove();
+        this.shadow.remove();
+        this.text.remove();
+    },
+
+    getText: function() {
+        return this.getTemplate()({
+            left: this.control.get(this._left),
+            right: this.control.get(this._right)
+        });
+    },
+
+    getTemplate: function() {
+        if (this.state === 'move')
+            return _.template('x: <%= left %>px y: <%= right %>px');
+        else if (this.state === 'resize')
+            return _.template('width: <%= left %>px  height: <%= right %>px');
+        else
+            return null;
+    }
+
+});
 
 
 Ds.Selectable = {
@@ -1609,31 +2137,43 @@ Ds.Selectable = {
 
             this.selectionAnchors = [];
 
-            var anchorRT = new NorthEastAnchor({ box: this }),
-                anchorLT = new NorthWestAnchor({ box: this }),
-                anchorLB = new SouthWestAnchor({ box: this }),
-                anchorRB = new SouthEastAnchor({ box: this });
+            var anchorNE = new NorthEastAnchor({ box: this }),
+                anchorNW = new NorthWestAnchor({ box: this }),
+                anchorSW = new SouthWestAnchor({ box: this }),
+                anchorSE = new SouthEastAnchor({ box: this }),
+                anchorN = new NorthAnchor({ box: this }),
+                anchorS = new SouthAnchor({ box: this }),
+                anchorW = new WestAnchor({ box: this }),
+                anchorE = new EastAnchor({ box: this });
 
-            var x = anchorLT.get('x') + 3,
-                y = anchorLT.get('y') + 3,
-                width = anchorRT.get('x') + 3 - x,
-                height = anchorLB.get('y') + 3 - y;
+            var x = bbox.x,
+                y = bbox.y,
+                width = bbox.width,
+                height = bbox.height;
 
             this.selectionBox = this.paper().rect(x, y, width, height, 0);
-            this.selectionBox.attr({ stroke: 'orange', 'stroke-width': 1, 'stroke-dasharray': '--'});
+            this.selectionBox.attr(this.selectionStyle);
             this.selectionBox.toFront();
 
             if (this.resizable) {
-                anchorRT.render().resizable();
-                anchorLT.render().resizable();
-                anchorRB.render().resizable();
-                anchorLB.render().resizable();
+                anchorNE.render().resizable();
+                anchorNW.render().resizable();
+                anchorSW.render().resizable();
+                anchorSE.render().resizable();
+                anchorN.render().resizable();
+                anchorS.render().resizable();
+                anchorW.render().resizable();
+                anchorE.render().resizable();
             }
 
-            this.selectionAnchors.push(anchorLT);
-            this.selectionAnchors.push(anchorRT);
-            this.selectionAnchors.push(anchorLB);
-            this.selectionAnchors.push(anchorRB);
+            this.selectionAnchors.push(anchorNE);
+            this.selectionAnchors.push(anchorNW);
+            this.selectionAnchors.push(anchorSW);
+            this.selectionAnchors.push(anchorSE);
+            this.selectionAnchors.push(anchorN);
+            this.selectionAnchors.push(anchorS);
+            this.selectionAnchors.push(anchorW);
+            this.selectionAnchors.push(anchorE);
         }
     },
 
@@ -1652,10 +2192,14 @@ Ds.Selectable = {
 
 
 
-// Anchor
-//
+/**
+ * @name Anchor
+ * @class Abstract representation of a resize box
+ * @augments DiagramElement
+ *
+ */
 
-var Anchor = Ds.Anchor = Ds.DiagramElement.extend({
+var Anchor = Ds.Anchor = Ds.DiagramElement.extend( /** @lends Anchor.prototype */ {
     cursor: 'none',
 
     constructor: function(attributes) {
@@ -1669,13 +2213,14 @@ var Anchor = Ds.Anchor = Ds.DiagramElement.extend({
 
     initialize: function(attributes) {},
 
+    /**
+     * Renders the anchor on the canvas
+     */
+
     render: function() {
         var paper = this.paper();
-        this.wrapper = paper.rect(this.x, this.y, 6, 6, 0).attr({
-            fill: 'black',
-            stroke: 'none',
-            'fill-opacity': 1
-        });
+        this.wrapper = paper.rect(this.x, this.y, 6, 6, 0)
+            .attr(this.box.anchorStyle);
 
         if (this.box.resizable) {
             this.wrapper.attr({ cursor: this.cursor });
@@ -1686,6 +2231,10 @@ var Anchor = Ds.Anchor = Ds.DiagramElement.extend({
 
         return this;
     },
+
+    /**
+     * Removes the anchor from the canvas
+     */
 
     remove: function() {
         if (this.wrapper) {
@@ -1709,50 +2258,62 @@ Anchor.start = function() {
     var current = this.anchor;
     var control = this.box.controller;
 
-    control.startresize();
+    control.startResize();
 
-    if (control.shadow) {
+    if (control.boundBox)
+        control.boundBox.render();
+
+    if (control.shadow)
         control.shadowWrapper.remove();
-    }
 
     _.each(control.selectionAnchors, function( anchor ) {
         if (anchor !== current) {
             anchor.remove();
+        } else {
+            anchor.hide();
         }
     });
 };
 
-Anchor.move = function( dx, dy, mx, my, ev ) {
+Anchor.move = function( dx, dy, mx, my, eve ) {
+    var control = this.box.controller,
+        direction = this.anchor.direction,
+        min, limits, r;
+
     this.attr( { x: this.ox + dx, y: this.oy + dy } );
 
-    var control = this.box.controller,
-        min, r;
+    min = control.minimumSize();
+    limits = control.parent ? control.parent.bounds() : control.paper;
+    r = control.wrapper.rdxy(dx, dy, direction, min, limits);
+    control.set(r);
 
-    if (control) {
-        min = control.minimumSize();
-        r = control.wrapper.rdxy(dx, dy, this.anchor.direction);
+    if (control.boundBox)
+        control.boundBox.render();
 
-        if (r.width < min.width) r.width = min.width;
-        if (r.height < min.height) r.height = min.height;
-
-        control.set(r);
-        control._renderEdges();
-    }
+    control.renderEdges();
 };
 
 Anchor.end = function() {
     var control = this.box.controller;
 
-    control.endresize();
+    control.endResize();
 
-    if (control.shadow) {
+    if (control.shadow)
         control.createShadow();
-    }
 
-    if (this.anchor) {
+    if (control.boundBox)
+        control.boundBox.remove();
+
+    if (this.anchor)
         this.anchor.box.select();
-    }
 };
+
+/**
+ * @name NorthWestAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
 
 var NorthWestAnchor = Anchor.extend({
 
@@ -1771,6 +2332,13 @@ var NorthWestAnchor = Anchor.extend({
 
 });
 
+/**
+ * @name SouthWestAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
 var SouthWestAnchor = Anchor.extend({
 
     initialize: function( properties ) {
@@ -1787,6 +2355,13 @@ var SouthWestAnchor = Anchor.extend({
     }
 
 });
+
+/**
+ * @name NorthEastAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
 
 var NorthEastAnchor = Anchor.extend({
 
@@ -1805,6 +2380,13 @@ var NorthEastAnchor = Anchor.extend({
 
 });
 
+/**
+ * @name SouthEastAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
 var SouthEastAnchor = Anchor.extend({
 
     initialize: function( properties ) {
@@ -1821,6 +2403,104 @@ var SouthEastAnchor = Anchor.extend({
     }
 
 });
+
+/**
+ * @name NorthAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
+var NorthAnchor = Anchor.extend({
+
+    initialize: function( properties ) {
+        var bbox = properties.box.wrapper.getABox();
+        this.x = bbox.xCenter - 3;
+        this.y = bbox.y - 3;
+        this.cursor = 'n-resize';
+        this.direction = 'n';
+    },
+
+    resizable: function() {
+        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
+        return this;
+    }
+
+});
+
+/**
+ * @name SouthAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
+var SouthAnchor = Anchor.extend({
+
+    initialize: function( properties ) {
+        var bbox = properties.box.wrapper.getABox();
+        this.x = bbox.xCenter - 3;
+        this.y = bbox.yBottom - 3;
+        this.cursor = 's-resize';
+        this.direction = 's';
+    },
+
+    resizable: function() {
+        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
+        return this;
+    }
+
+});
+
+/**
+ * @name WestAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
+var WestAnchor = Anchor.extend({
+
+    initialize: function( properties ) {
+        var bbox = properties.box.wrapper.getABox();
+        this.x = bbox.x - 3;
+        this.y = bbox.yMiddle - 3;
+        this.cursor = 'w-resize';
+        this.direction = 'w';
+    },
+
+    resizable: function() {
+        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
+        return this;
+    }
+
+});
+
+/**
+ * @name EastAnchor
+ * @class
+ * @augments Anchor
+ *
+ */
+
+var EastAnchor = Anchor.extend({
+
+    initialize: function( properties ) {
+        var bbox = properties.box.wrapper.getABox();
+        this.x = bbox.xRight - 3;
+        this.y = bbox.yMiddle - 3;
+        this.cursor = 'e-resize';
+        this.direction = 'e';
+    },
+
+    resizable: function() {
+        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
+        return this;
+    }
+
+});
+
+
 
 
 
@@ -1857,23 +2537,42 @@ var LabelImage = Ds.Image = Ds.DiagramElement.extend({
 
 
 
-// Label
-//
 
-var Label = Ds.Label = Ds.DiagramElement.extend({
+var positions = [
+    'top-left', 'top-right', 'top-center',
+    'bottom-left', 'bottom-right', 'bottom-center',
+    'center-left', 'center-right', 'center'
+];
+
+function getPosition(label, properties)  {
+    var position = label.figure ? label.figure.position || 'center' : 'center';
+
+    if (properties && properties.position) {
+        position = properties.position;
+
+        if (position.x && position.y) {
+            return position;
+        } else if (_.include(positions, position)) {
+            return position;
+        }
+    }
+
+    return position; // default
+}
+
+/**
+ * @name Label
+ * @class Diagram Element that can display a text with an associated icon.
+ * @augments LayoutElement
+ *
+ */
+
+var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
 
     constructor: function(attributes) {
-        Ds.DiagramElement.apply(this, [attributes]);
+        Ds.LayoutElement.apply(this, [attributes]);
 
-//        var attrs = this.figure ? this : attributes;
-
-        this._positions = [
-            'top-left', 'top-right', 'top-center',
-            'bottom-left', 'bottom-right', 'bottom-center',
-            'center-left', 'center-right', 'center'
-        ];
-
-        this.position = this.getPosition(attributes);
+        this.position = getPosition(this, attributes);
         this.resizable = attributes.resizable || false;
         this.draggable = attributes.draggable || false;
         this.editable = attributes.editable || true;
@@ -1885,27 +2584,11 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
         if (image) {
             this.setImage(image);
         }
-        this.set('position', this.getPosition());
-    },
-
-    getPosition: function(properties)  {
-        var position = this.figure.position || 'center';
-
-        if (properties && properties.position) {
-            position = properties.position;
-
-            if (position.x && position.y) {
-                return position;
-            } else if (_.include(this._positions, position)) {
-                return position;
-            }
-        }
-
-        return position; // default
+        this.initialize(attributes);
     },
 
     // Should be only one image.
-    setImage: function( attributes ) {
+    setImage: function(attributes) {
         attributes.parent = this;
         var image = new Ds.Image( attributes );
         this.image = image;
@@ -1915,19 +2598,30 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
     render: function() {
         if (this.wrapper) this.remove();
 
-        var paper = this.paper(),
-            bBox = this.parent.wrapper.getABox();
+        var paper = this.paper();
+//            bBox = this.parent.wrapper.getABox();
 
-        this.wrapper = paper.rect().attr({ fill: 'none', stroke: 'blue' });
+        this.wrapper = paper.rect().attr({ fill: 'none', stroke: 'none' });
+        if (this.attributes.fill) {
+            this.wrapper.attr({ fill: this.attributes.fill });
+        }
         this.label = paper.text(0, 0, this.get('text')).attr({
             fill: 'black',
             'font-size': 12
         });
 
+        if (this.attributes['font-size']) {
+            this.label.attr('font-size', this.attributes['font-size']);
+        }
+
         this.wrapper.toFront();
         this.label.toFront();
         this.wrapper.controller = this;
+        console.log('render', this.get('x'));
         this.doLayout();
+
+//        var size = this.preferredSize();
+//        this.wrapper.attr({ width: size.width, height: size.height });
 
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
@@ -1937,32 +2631,33 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
 
     center: function() {
         var box = this.wrapper.getABox(),
-            label = this.label;
-
+            label = this.label,
+            lbox = label.getABox();
+console.log(this.position, box.xCenter);
         switch (this.position) {
             case 'center':
                 label.attr('x', box.xCenter);
                 label.attr('y', box.yMiddle);
                 break;
             case 'center-left':
-                label.attr('x', box.x + this.xOffset + (box.width / 2));
+                label.attr('x', box.x + (lbox.width / 2) + this.xOffset);
                 label.attr('y', box.yMiddle);
                 if (this.image) {
                     var x = this.get('x');
-                    this.attr({ x: x + this.image.get('width') });
+                    this.set({ x: x + this.image.get('width') });
                 }
                 break;
             case 'center-right':
-                label.attr('x', box.xRight - this.xOffset - (box.width / 2));
+                label.attr('x', box.xRight - this.xOffset - (lbox.width / 2));
                 label.attr('y', box.yMiddle);
                 break;
             case 'top-center':
                 label.attr('x', box.xCenter);
-                label.attr('y', box.y + (box.height / 2) + this.yOffset);
+                label.attr('y', box.y + (lbox.height / 2) + this.yOffset);
                 break;
             case 'top-left':
-                label.attr('x', box.x + (box.width / 2) + this.xOffset);
-                label.attr('y', box.y + (box.height / 2) + this.yOffset);
+                label.attr('x', box.x + (lbox.width / 2) + this.xOffset);
+                label.attr('y', box.y + (lbox.height / 2) + this.yOffset);
                 break;
             case 'top-right':
                 label.attr('x', box.xRight - this.xOffset - (box.width / 2));
@@ -1985,21 +2680,22 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
         }
 
         if (this.image) {
-            var lbox = this.label.getABox();
-            this.image.set({ x: lbox.x - this.image.get('width')});
+            this.image.set({ x: lbox.x - this.image.get('width') - 2 });
             this.image.set({ y: lbox.y });
         }
     },
 
-    setText: function( text ) {
+    setText: function( text, silent ) {
         this.set('text', text);
 
         if (this.wrapper && this.label) {
             this.label.attr('text', text);
-            this.center();
+            this.doLayout();
         }
 
-        this.trigger('change:text', this);
+        if (!silent) {
+            this.trigger('change:text', this);
+        }
     },
 
     getText: function() {
@@ -2007,7 +2703,6 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
     },
 
     remove: function() {
-        console.log('remove label');
         if (this.image) {
             this.image.remove();
         }
@@ -2021,6 +2716,23 @@ var Label = Ds.Label = Ds.DiagramElement.extend({
 
     doLayout: function() {
         this.center();
+    },
+
+    preferredSize: function() {
+//        console.log('preferredSize', this.label.getABox());
+        if (this.label) {
+            return this.label.getABox();
+        } else {
+            return { width: this.get('width'), height: this.get('height') };
+        }
+    },
+
+    minimumSize: function() {
+        if (this.label) {
+            return this.label.getABox();
+        } else {
+            return { width: this.get('width'), height: this.get('height') };
+        }
     },
 
     asEditable: function() {
@@ -2083,35 +2795,70 @@ _.extend(Ds.Label.prototype, Ds.Draggable, Ds.Events);
 
 
 
-// Shape
-//
-//
-//  var BasicShape = Ds.Shape.extend({
-//      figure: {
-//          type: 'rect',
-//          width: 100,
-//          height: 100,
-//          fill: 'yellow'
-//      },
-//      layout: {
-//          type: 'flow',
-//          vertical: true
-//      },
-//      children: [{
-//          figure: {
-//              type: 'text',
-//              text: 'Label'
-//          }
-//      }]
-//  });
+/*
+ * Styles
+ */
 
-var Shape = Ds.Shape = Ds.DiagramElement.extend({
-    // default settings.
+Ds.Styles = {
+
+    moveStyle: { fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 },
+    resizeStyle: { fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 },
+    selectStyle: { fill: 'none', stroke: 'black', 'stroke-width': 1 },
+    anchorStyle: { fill: 'black', stroke: 'none', 'fill-opacity': 1 }
+
+};
+
+/** @name Shape
+ *  @class Represents a Shape
+ *  @augments LayoutElement
+ *
+ *  @example
+ *
+ *  var BasicShape = Ds.Shape.extend({
+ *      figure: {
+ *          type: 'rect',
+ *          width: 100,
+ *          height: 100,
+ *          fill: 'yellow'
+ *      },
+ *      layout: {
+ *          type: 'flow',
+ *          vertical: true
+ *      },
+ *      children: [{
+ *          figure: {
+ *              type: 'text',
+ *              text: 'Label'
+ *          }
+ *      }]
+ *  });
+ */
+
+var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
+    /**
+     * @property {boolean} connectable
+     */
     connectable: true,
-    shadow: false,
+    /**
+     * @property {boolean} shadow
+     */
+    showShadow: false,
+    /**
+     * @property {boolean} resizable
+     */
     resizable: true,
+    /**
+     * @property {boolean} draggable
+     */
     draggable: true,
-    toolbox: true,
+    /**
+     * @property {boolean} toolbox
+     */
+    showToolBox: true,
+    /**
+     * @property {boolean} boundBox
+     */
+    showBoundBox: true,
 
     constructor: function(attributes) {
         Ds.DiagramElement.apply(this, [attributes]);
@@ -2119,13 +2866,14 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
         this.ins = [];
         this.outs = [];
 
-        if (attributes.draggable != null)
+        if (_.isBoolean(attributes.draggable))
             this.draggable = attributes.draggable;
-        if (attributes.resizable != null)
+        if (_.isBoolean(attributes.resizable))
             this.resizable = attributes.resizable;
-        if (attributes.toolbox != null)
-            this.toolbox = attributes.toolbox;
-
+        if (_.isBoolean(attributes.showToolBox))
+            this.showToolBox = attributes.showToolBox;
+        if (_.isBoolean(attributes.showBoundBox))
+            this.showBoundBox = attributes.showBoundBox;
 
         if (attributes.children) {
             this.children = attributes.children;
@@ -2136,15 +2884,48 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
             this.diagram.trigger('add:children', this);
         }
 
-        this._initChildren();
-        this._initLayout();
-
-        if (this.toolbox) {
-            this._tool = new ToolBox({ element: this });
-        }
+        this.setUpChildren();
+        this.setUpLayout();
+        this.setUpStyles(attributes);
+        this.setUpToolBox();
+        this.setUpBoundBox();
 
         this.initialize.apply(this, arguments);
     },
+
+    /**
+     * @private
+     */
+
+    setUpToolBox: function(attributes) {
+        if (this.showToolBox) {
+            this.toolBox = new ToolBox({ element: this });
+        }
+    },
+
+    setUpBoundBox: function() {
+        if (this.showBoundBox) {
+            this.boundBox = new Ds.BoundBox({ control: this });
+        }
+    },
+
+    /**
+     * @private
+     */
+
+    setUpStyles: function(attributes) {
+        _.each(_.keys(Ds.Styles), function(style) {
+            if (attributes[style]) {
+                this[style] = _.clone(attributes[style]);
+            } else {
+                this[style] = _.clone(Ds.Styles[style]);
+            }
+        }, this);
+    },
+
+    /**
+     * Renders the Shape
+     */
 
     render: function() {
         if (this.wrapper) this.remove(false);
@@ -2154,58 +2935,104 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
         if (!this.wrapper) throw new Error('Cannot render this shape: ', this);
 
         this.set(this.attributes);
-        this._renderContent();
+        this.renderContent();
+
+        this.bindEvents();
+        this.on('click', this.select);
+        this.on('click', this.showTool);
+        this.on('mousedown', this.handleClick);
+        this.on('mouseout', this.removeToolWhenOut);
 
         if (this.draggable) this.asDraggable();
-
-        this.wrapper.click(this.click);
-        this.wrapper.mouseover(this.mouseover);
-        this.wrapper.mouseout(this.mouseout);
 
         return this;
     },
 
-    click: function(e) {
-        if (!this.controller) return;
+    /**
+     * @private
+     */
 
-        var control = this.controller,
-            diagram = control.diagram;
+    bindEvents: function() {
+        if (!this.wrapper) return;
 
-        // Show selectors
-        control.select();
-
-        // Show toolbox
-        if (control._tool) {
-            control._tool.render();
-        }
-
-        // Handle connections
-        if (diagram.canConnect(control)) {
-            var connection = diagram.connect(control);
-            if (connection) connection.render();
-        }
+        var me = this;
+        this.wrapper.click(function(e) { me.trigger('click', e); });
+        this.wrapper.mouseover(function(e) { me.trigger('mouseover', e); });
+        this.wrapper.mouseout(function(e) { me.trigger('mouseout', e); });
+        this.wrapper.mouseup(function(e) { me.trigger('mouseup', e); });
+        this.wrapper.mousedown(function(e) { me.trigger('mousedown', e); });
     },
 
-    mouseover: function(e) {
+    /**
+     * @private
+     */
+
+    handleClick: function(e) {
+        var diagram = this.diagram,
+            edge = diagram.currentEdge,
+            shape = this;
+
+        if (!edge) return;
+
+        shape.connecting = true;
+        var start = Point.get(diagram.paper(), e);
+
+        var onup = function(e) {
+            if (!shape.line || !shape.connecting) return;
+
+            var targetShape = diagram.getElementByPoint(shape.line.end);
+            if (targetShape) {
+                diagram.createConnection(edge, { source: shape, target: targetShape }).render();
+                delete diagram.currentEdge;
+            }
+            if (shape.line) {
+                shape.line.remove();
+                delete shape.line;
+            }
+            shape.connecting = false;
+            document.removeEventListener('mousemove', onmove);
+            document.removeEventListener('mousemove', onup);
+        };
+
+        var onmove = function(e) {
+            if (!shape.connecting) return;
+            var end = Point.get(diagram.paper(), e);
+            if (shape.line) shape.line.remove();
+            shape.line = new Line(diagram.paper(), start, end);
+            document.addEventListener('mouseup', onup);
+        };
+
+        document.addEventListener('mousemove', onmove);
     },
 
-    mouseout: function(e) {
-        if (!this.controller) return;
+    /**
+     * @private
+     */
 
-        var control = this.controller;
-        if (control._tool) {
+    showTool: function() {
+        if (this._tool) this._tool.render();
+    },
+
+    /**
+     * @private
+     */
+
+    removeToolWhenOut: function() {
+        var me = this;
+        // bug check something with children
+        if (me.toolBox) {
             window.setTimeout(function(){
-                if (control._tool) {
-                    if (!control._tool.isOver) {
-                        control._tool.remove();
-                    }
-                }
-            }, 500);
+                if (me.toolBox && !me.toolBox.isOver)
+                    me.toolBox.remove();
+            }, 1000);
         }
     },
 
-    // @param {Boolean} fromDiagram - also removes from diagram.
-    remove: function(fromDiagram) {
+    /**
+     * @param {Boolean} diagram - also removes from diagram.
+     */
+
+    remove: function(diagram) {
         this.deselect();
 
         if (this.wrapper) {
@@ -2214,8 +3041,8 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
         }
 
         _.each(this.children, function(c) { c.remove(); });
-        _.each(this.ins, function(e) { e.remove(fromDiagram); });
-        _.each(this.outs, function(e) { e.remove(fromDiagram); });
+        _.each(this.ins, function(e) { e.remove(diagram); });
+        _.each(this.outs, function(e) { e.remove(diagram); });
 
         // remove shadow if present.
         if (this.shadow) {
@@ -2223,112 +3050,78 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
             delete this.shadowWrapper;
         }
 
-        // remove toolbox if present.
-        if (this._tool) {
-            this._tool.remove();
-            delete this._tool;
+        if (this.selectionBox) {
+            this.selectionBox.remove();
         }
 
-        this.diagram.removeShape(this);
+        // remove toolbox if present.
+        if (this.toolBox) {
+            this.toolBox.remove();
+            delete this.toolBox;
+        }
+
+        if (diagram) {
+            this.diagram.removeShape(this);
+        }
     },
 
+    /**
+     * Disconnect a connection from the shape
+     *
+     * @param Connection
+     * @param String
+     */
+
     disconnect: function(connection, direction) {
-        if (connection && direction && (direction === 'in' || direction === 'out'))
+        if (!connection) return this;
+
+        if (direction && (direction === 'in' || direction === 'out')) {
             this[direction+'s'] = _.without(this[direction+'s'], connection);
-        else if (connection) {
+        } else {
             this.ins = _.without(this.ins, connection);
             this.outs = _.without(this.outs, connection);
         }
-        return this;
-    },
-
-    move: function(x, y) {
-        this.startmove();
-        this.set({ x: x, y: y, cx: x, cy: y });
-        this.endmove();
-        return this;
-    },
-
-    startmove: function() {
-        this.deselect();
-        this._removeContent();
-
-        if (this.wrapper) {
-            var wrapper = this.wrapper,
-                attrs = _.clone(wrapper.attrs),
-                type = wrapper.type;
-
-            wrapper.o();
-            wrapper.attr({ fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 });
-            this.wrapper.unmouseover(this.mouseover);
-            this.wrapper.unmouseout(this.mouseout);
-        }
-        if (this.shadow) this.shadowWrapper.remove();
-    },
-
-    endmove: function() {
-        this._renderContent();
-        if (this.wrapper) {
-            this.wrapper.reset();
-            this.wrapper.mouseover(this.mouseover);
-            this.wrapper.mouseout(this.mouseout);
-        }
-        if (this.shadow) this.createShadow();
-    },
-
-    startresize: function() {
-        if (!this.wrapper) return;
-        if (this._tool) this._tool.remove();
-        this.wrapper.o();
-        this._removeContent();
-        this.wrapper.attr({ fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 });
-    },
-
-    resize: function(dx, dy, direction) {
-        if (!this.resizable) return this;
-
-        this.deselect();
-        this.startresize();
-        this.set({ width: this.wrapper.ow + dx, height: this.wrapper.oh + dy });
-        this.endresize();
 
         return this;
     },
 
-    endresize: function() {
-        this.wrapper.reset();
-        this._renderEdges();
-        this._renderContent();
-    },
-
-    asDraggable: function( options ) {
-        if (this.wrapper) {
-            this.wrapper.attr({ cursor: 'move' });
-        }
-
-        this.wrapper.drag(move, start, end);
-
-        return this;
-    },
+    /**
+     * Add a child Shape
+     *
+     * @param Shape
+     */
 
     add: function(shape) {
-        shape.diagram = this.diagram;
-        shape.parent = this;
+        shape.setParent(this);
         this.children.push(shape);
+        this.trigger('add:children', shape);
         return this;
     },
+
+    /**
+     * Returns the JSON representation of the Shape
+     *
+     * @return JSONObject
+     */
 
     toJSON: function() {
         return _.clone(this.attributes);
     },
 
-    // Private
 
-    _initLayout: function() {
+    /**
+     * @private
+     */
+
+    setUpLayout: function() {
         this.layout = createLayout(this);
     },
 
-    _initChildren: function() {
+    /**
+     * @private
+     */
+
+    setUpChildren: function() {
         var children = this.children,
             shape;
 
@@ -2348,64 +3141,209 @@ var Shape = Ds.Shape = Ds.DiagramElement.extend({
         }, this);
     },
 
-    _removeContent: function() {
+    /**
+     * @private
+     */
+
+    removeContent: function() {
         _.each(this.children, function(c) { c.remove(); });
     },
 
-    _renderContent: function() {
-        _.each(this.children, function(c) {
-            c.render();
-        });
-        if (!this.parent) this.doLayout();
+    /**
+     * @private
+     */
+
+    renderContent: function() {
+        _.each(this.children, function(c) { c.render(); });
+        this.doLayout();
     },
 
-    _renderEdges: function() {
+    /**
+     * @private
+     */
+
+    renderEdges: function() {
         _.each(this.ins, function(i) { i.render(); });
         _.each(this.outs, function(o) { o.render(); });
     }
 
 });
 
-_.extend(Ds.Shape.prototype, Ds.Selectable, Ds.Events);
+/**
+ * @name Resizable
+ * @class
+ */
 
-// Dragging functions
+Ds.Resizable = {
 
-function start() {
-    this.controller.startmove();
-}
+     /**
+     * @private
+     */
 
-function move( dx, dy, mx, my, ev ) {
-    var wrapper = this,
-        b = wrapper.getBBox(),
-        x = wrapper.ox + dx,
-        y = wrapper.oy + dy,
-        r = wrapper.is('circle') || wrapper.is('ellipse') ? b.width / 2 : 0,
-        paper = wrapper.paper,
-        control = wrapper.controller,
-        position;
+    startResize: function() {
+        if (!this.wrapper) return;
+        if (this._tool) this.toolBox.remove();
+        this.wrapper.o();
+        this.removeContent();
+        this.wrapper.attr(this.resizeStyle);
+        this.trigger('start:resize');
+    },
 
-    x = Math.min(
-            Math.max(r, x),
-            paper.width - (wrapper.is('circle') || wrapper.is('ellipse') ? r : b.width));
-    y = Math.min(
-            Math.max(r, y),
-            paper.height - (wrapper.is('circle') || wrapper.is('ellipse') ? r : b.height));
+    /**
+     * Resizes the Shape by the given factors and direction
+     *
+     * @example
+     *
+     * var s = new BasicShape({ ... });
+     * // will resize the shape by 10 on y coordinates
+     * s.resize(0, 10);
+     *
+     *
+     * @param Integer dx
+     * @param Integer dy
+     * @param String direction
+     */
 
-    position = { x: x, y: y, cx: x, cy: y };
-    wrapper.attr(position);
+    resize: function(dx, dy, direction) {
+        var width, height;
+        if (!this.resizable) return this;
 
-    if (control) control._renderEdges();
-}
+        this.deselect();
+        this.startResize();
 
-function end() {
-    var control = this.controller;
+        width = this.wrapper.ow + dx;
+        height = this.wrapper.oh + dy;
+        this.set({ width: width, height: height });
 
-    if (control) {
-         // store new coordinates
-        control.set({ x: this.x(), y: this.y() });
-        control.endmove();
+        this.endResize();
+
+        return this;
+    },
+
+    /**
+     * @private
+     */
+
+    endResize: function() {
+        this.wrapper.reset();
+        this.renderEdges();
+        this.renderContent();
+        this.trigger('end:resize');
     }
-}
+
+};
+
+/**
+ * @name Draggable
+ * @class
+ */
+
+Ds.Draggable = {
+
+    asDraggable: function(options) {
+        if (this.wrapper) {
+            this.wrapper.attr({ cursor: 'move' });
+        }
+
+        this.wrapper.drag(this.move, this.startMove, this.endMove);
+
+        return this;
+    },
+
+    startMove: function() {
+        var control = this.wrapper ? this : this.controller;
+        if (!control) return;
+        if (control.connecting) return;
+
+        control.deselect();
+        control.removeContent();
+
+        var wrapper = control.wrapper;
+        // store previous attributes
+        var attrs = _.clone(wrapper.attrs);
+        var type = wrapper.type;
+
+        // stores current state
+        wrapper.o();
+        // sets move style
+        wrapper.attr(control.moveStyle);
+        wrapper.unmouseover(wrapper.mouseover);
+        wrapper.unmouseout(wrapper.mouseout);
+        control.trigger('start:move');
+    },
+
+    endMove: function() {
+        var control = this.wrapper ? this : this.controller;
+        if (!control) return;
+
+        control.renderContent();
+        var wrapper = control.wrapper;
+
+        wrapper.reset();
+        wrapper.mouseover(this.mouseover);
+        wrapper.mouseout(this.mouseout);
+
+        if (control.boundBox)
+            control.boundBox.remove();
+
+        control.trigger('end:move');
+    },
+
+    move: function(dx, dy, mx, my, eve) {
+        var control = this.wrapper ? this : this.controller;
+        if (!control) return;
+        if (control.connecting) return;
+
+        if (arguments.length === 2) {
+            var x = arguments[0];
+            var y = arguments[1];
+            this.startMove();
+            this.set({ x: x, y: y });
+            this.endMove();
+            return control;
+        }
+
+        control.set(control.calculatePosition(dx, dy));
+
+        if (control.boundBox)
+            control.boundBox.render();
+
+        control.renderEdges();
+
+        return control;
+    },
+
+    calculatePosition: function(dx, dy) {
+        var wrapper = this.wrapper;
+        var parent = this.parent;
+        var bounds = parent ? parent.bounds() : wrapper.paper;
+        var b = wrapper.getBBox();
+        var x = wrapper.ox + dx;
+        var y = wrapper.oy + dy;
+
+        var isCircle = function() {
+            return wrapper.is('circle') || wrapper.is('ellipse');
+        };
+
+        var r = isCircle() ? b.width / 2 : 0;
+
+        // calculates the min between the requested positions and
+        // the limits of the container
+
+        if (parent) {
+            x = Math.min(Math.max(bounds.x + r, x), (bounds.width - (isCircle() ? r : b.width)) + bounds.x);
+            y = Math.min(Math.max(bounds.y + r, y), (bounds.height - (isCircle() ? r : b.height)) + bounds.y);
+        } else {
+            x = Math.min(Math.max(r, x), bounds.width - (isCircle() ? r : b.width));
+            y = Math.min(Math.max(r, y), bounds.height - (isCircle() ? r : b.height));
+        }
+
+        return { x: x, y: y, cx: x, cy: y };
+    }
+
+};
+
+_.extend(Ds.Shape.prototype, Ds.Selectable, Ds.Resizable, Ds.Draggable, Ds.Events);
 
 
 
@@ -2424,13 +3362,6 @@ var Compartment = Ds.Compartment = Ds.Shape.extend({
 
         this.accepts = attributes.accepts || [];
         this.initialize.apply(this, arguments);
-    },
-
-    click: function(e) {
-        var control = this.controller;
-        if (control.parent) {
-            control.parent.select();
-        }
     },
 
     canCreate: function(func) {
@@ -2467,13 +3398,21 @@ var Compartment = Ds.Compartment = Ds.Shape.extend({
             this.set('height', newHeight);
         }
 
-        var h = this.wrapper.attr('height');
-        console.log('height', h, attrs.y, shape.get('height'), this._height());
-
         this.doLayout();
 
         return shape;
     },
+
+    // private
+
+    //
+    // @override Shape._handleClick
+
+    _handleClick: function(e) {
+        if (this.parent) {
+            this.parent.select();
+        }
+     },
 
     _width: function() {
         var child = this.children,
@@ -2508,11 +3447,51 @@ var Compartment = Ds.Compartment = Ds.Shape.extend({
 });
 
 
+Ds.arrows = {
 
-// Connection Anchor
-//
+    none: function( size ) {
+        if (!size) {
+            size = 2;
+        }
+        return {
+            path: 'M'+size+',0L'+(-size)+',0',
+            dx: size,
+            dy: size,
+            attr: {
+                opacity: 0
+            }
+        };
+    },
 
-var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
+    basic: function( p, size ) {
+        if (!size) {
+            size = 4;
+        }
+        return {
+            path: [
+                'M',size.toString(),'0',
+                'L',(-size).toString(),(-size).toString(),
+                'L',(-size).toString(),size.toString(),'z'
+            ],
+            dx: size,
+            dy: size,
+            attr: {
+                stroke: 'black',
+                fill: 'black'
+            }
+        };
+    }
+};
+
+
+
+/**
+ * @name ConnectionAnchor
+ * @class Represents a connection anchor
+ * @augments DiagramElement
+ */
+
+var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends ConnectionAnchor.prototype */ {
 
     constructor: function(attributes) {
         Ds.DiagramElement.apply(this, [attributes]);
@@ -2520,6 +3499,12 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
         this.connection = attributes.connection;
         this.diagram = this.connection.diagram;
     },
+
+    /**
+     * Moves the connection anchor to the given point
+     *
+     * @param {Point} point
+     */
 
     move: function(point) {
         this.x = point.x;
@@ -2529,6 +3514,10 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
         }
         return this;
     },
+
+    /**
+     * Renders the connection anchor on the canvas
+     */
 
     render: function() {
         if (this.wrapper) {
@@ -2543,6 +3532,10 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
 
         return this;
     },
+
+    /**
+     * Removes the connection anchor from the canvas
+     */
 
     remove: function() {
         if (this.wrapper) {
@@ -2597,6 +3590,10 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
         return this;
     },
 
+    /**
+     * Returns the JSON representation
+     */
+
     toJSON: function() {
         this.set('x', this.wrapper.x());
         this.set('y', this.wrapper.y());
@@ -2607,16 +3604,11 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend({
 });
 
 
-
-// ConnectionEnd
-//
-//  end: {
-//      type: 'basic',
-//      label: {
-//          text: '[]'
-//      }
-//
-// }
+/*
+ * @name ConnectionEnd
+ * @class Represents a connection end
+ *
+ */
 
 var ConnectionEnd = function( paper, point, angle, radians, attributes ) {
     this.paper = paper;
@@ -2641,11 +3633,19 @@ var ConnectionEnd = function( paper, point, angle, radians, attributes ) {
 
 _.extend(ConnectionEnd.prototype, Ds.Element.prototype);
 
+/**
+ * Removes the ConnectionEnd from the canvas
+ */
+
 ConnectionEnd.prototype.remove = function() {
     if (this.wrapper) {
         this.wrapper.remove();
     }
 };
+
+/**
+ * Renders the ConnectionEnd on the canvas
+ */
 
 ConnectionEnd.prototype.render = function() {
     var type = this.get('type');
@@ -2675,13 +3675,13 @@ ConnectionEnd.prototype.render = function() {
 };
 
 
-// ConnectionLabel
-//
-//  label: {
-//      text: '[]'
-//  }
+/**
+ * @name ConnectionLabel
+ * @class Represents a label associated to a connection
+ * @augments DiagramElement
+ */
 
-var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
+var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends ConnectionLabel.prototype */ {
 
     constructor: function(attributes) {
         Ds.DiagramElement.apply(this, [attributes]);
@@ -2695,14 +3695,21 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
         this.position = attributes.position;
 
         this.set('text', attributes.text);
-
     },
+
+    /**
+     * Removes the label from the canvas
+     */
 
     remove: function() {
         if (this.wrapper) {
             this.wrapper.remove();
         }
     },
+
+    /**
+     * Renders the label on canvas
+     */
 
     render: function() {
         this.remove();
@@ -2783,12 +3790,25 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
         return this;
     },
 
+    /**
+     * Changes the label's text. This method triggers the
+     * change:text event.
+     *
+     * @param {string} text
+     */
+
     setText: function(text) {
         this.set('text', text);
+        this.trigger('change:text', text);
+
         if (this.wrapper) {
             this.wrapper.attr('text', text);
         }
     },
+
+    /**
+     * Sets the label as draggable
+     */
 
     asDraggable: function() {
         var start = function() {
@@ -2812,6 +3832,10 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
         return this;
     },
 
+    /**
+     * Sets the label as editable
+     */
+
     asEditable: function() {
         var node = this;
         var diagram = this.connection.diagram;
@@ -2824,8 +3848,8 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
             var aBox = label.wrapper.getABox();
 
             var diagram = label.connection.diagram;
-            var px = diagram.el().offsetLeft;
-            var py = diagram.el().offsetTop;
+            var px = diagram.canvas().offsetLeft;
+            var py = diagram.canvas().offsetTop;
 
             var x = aBox.x + (isNaN(px) ? 0 : px);
             var y = aBox.y + (isNaN(py) ? 0 : py);
@@ -2870,7 +3894,7 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
             diagram.inputText = el.input;
             diagram.modifiedLabel = node;
 
-            diagram.el().parentNode.appendChild(el.form);
+            diagram.canvas().parentNode.appendChild(el.form);
         });
 
         return this;
@@ -2879,10 +3903,13 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend({
 });
 
 
+/**
+ * @name Connection
+ * @class Represents a connection between two shapes
+ * @augments DiagramElement
+ */
 
-// Connection
-
-var Connection = Ds.Connection = Ds.DiagramElement.extend({
+var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.prototype */{
     toolbox: true,
 
     constructor: function(attributes) {
@@ -2891,6 +3918,12 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
         this.set('sourceAnchor', new ConnectionAnchor({ connection: this }));
         this.set('targetAnchor', new ConnectionAnchor({ connection: this }));
         this.vertices = [];
+
+        this.labels = _.map(this.labels || [], function(label) {
+            return new ConnectionLabel({ connection: this,
+                position: label.position,
+                text: label.text
+        });}, this);
 
         if (this.toolbox) this._tool = new ToolBox({ element: this });
 
@@ -2904,6 +3937,12 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
 
     initialize: function() {},
 
+    /**
+     * Adds a FlexPoint at the given Point
+     *
+     * @param {Point}
+     */
+
     addPoint: function(point) {
         var fp = new FlexPoint(this, point);
         this.vertices.push(fp);
@@ -2913,26 +3952,43 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
         return this;
     },
 
-    remove: function(fromDiagram) {
+    /**
+     * Removes the connection from the canvas. if true is passed as
+     * argument, also removes the connection from the diagram.
+     *
+     * @param {boolean} diagram - if true also removes from diagram
+     *
+     */
+
+    remove: function(diagram) {
         if (this.wrapper) this.wrapper.remove();
         if (this.dummy) this.dummy.remove();
         if (this.startArrow) this.startArrow.remove();
         if (this.endArrow) this.endArrow.remove();
         if (this._tool) this._tool.remove();
+        if (this.labels) _.each(this.labels, function(l) { l.remove(); });
 
         _.each(this.vertices, function(v) {
             if (!v.state) v.remove();
         });
 
-        if (fromDiagram) {
+        if (diagram) {
             this.disconnect();
             this.get('sourceAnchor').remove();
             this.get('targetAnchor').remove();
             this.diagram.removeConnection(this);
         }
 
+        this.off('click', this._handleClick);
+        this.off('dblclick', this._createFlexPoint);
+
         return this;
     },
+
+    /**
+     * Renders the connection on canvas, will only render if the
+     * source and target are set.
+     */
 
     render: function() {
         var boxes = this._boxes(),
@@ -2975,46 +4031,66 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
         this.dummy.connection = this;
         this.dummy.attr({ cursor: 'pointer', fill: 'none', opacity: 0, 'stroke-width': 8 });
 
-        this.dummy.dblclick(this.dblclick);
-        this.dummy.click(this.click);
+        var me = this;
+        this.dummy.dblclick(function(e) { me.trigger('dblclick', e); });
+        this.dummy.click(function(e) { me.trigger('click', e); });
+
+        this.on('click', this._handleClick);
+        this.on('dblclick', this._createFlexPoint);
+
+        if (this.labels) _.each(this.labels, function(l) { l.render(); });
 
         return this;
     },
 
-    click: function(e) {
-        var connection = this.connection;
-        connection.select();
+    _handleClick: function(e) {
+        var tool = this._tool,
+            diagram = this.diagram;
 
-        if (connection._tool) {
-            connection._tool.render();
-        }
+        this.select();
 
-        if (connection.diagram.selected) {
-            connection.diagram.selected.deselect();
-        }
+        if (tool) tool.render();
+        if (diagram.selected)
+            diagram.selected.deselect();
     },
 
-    dblclick: function(e) {
-        var connection = this.connection;
-        connection.addPoint({ x: e.clientX, y: e.clientY });
-        connection.select();
+    _createFlexPoint: function(e) {
+        this.addPoint({ x: e.clientX, y: e.clientY });
+        this.select();
     },
 
-    onselect: function() {
-
-    },
+    /**
+     * Selects the connection. This method triggers a
+     * select event
+     */
 
     select: function() {
         this.get('sourceAnchor').toFront().show();
         this.get('targetAnchor').toFront().show();
         _.each(this.vertices, function(v) { v.render(); });
+        this.trigger('select');
     },
+
+    /**
+     * Deselects the connection. This method triggers a
+     * deselect event
+     */
 
     deselect: function() {
         this.get('sourceAnchor').toFront().hide();
         this.get('targetAnchor').toFront().hide();
         _.each(this.vertices, function(v) { v.remove(); });
+        this.trigger('deselect');
     },
+
+    /**
+     * Connects the connection to a source and a target Shape. This
+     * method triggers connect, connect:source and connect:target
+     * events
+     *
+     * @param {Shape} source
+     * @param {Shape} target
+     */
 
     connect: function(src, tgt) {
         if (!src || !tgt) return this;
@@ -3027,12 +4103,19 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
 
         src.trigger('connect:source', this);
         tgt.trigger('connect:target', this);
+        this.trigger('connect');
 
         src.outs.push(this);
         tgt.ins.push(this);
 
         return this;
     },
+
+    /**
+     * Disconnects the connection from it's source
+     * and target shapes. This method triggers a disconnect
+     * event
+     */
 
     disconnect: function() {
         var source = this.get('source');
@@ -3043,9 +4126,14 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
 
         this.set('source', null);
         this.set('target', null);
+        this.trigger('disconnect');
 
         return this;
     },
+
+    /**
+     * Returns a JSON representation of the connection
+     */
 
     toJSON: function() {
         var clone = {};
@@ -3117,7 +4205,11 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend({
 
 _.extend(Ds.Connection.prototype, Ds.Events);
 
-// FlexPoint
+/**
+ * @name FlexPoint
+ * @class Represents a flex point being part of a connection
+ *
+ */
 
 function FlexPoint(connection, point) {
     this.connection = connection;
@@ -3125,6 +4217,10 @@ function FlexPoint(connection, point) {
     this.x = point.x;
     this.y = point.y;
 }
+
+/**
+ * Renders the FlexPoint on the canvas
+ */
 
 FlexPoint.prototype.render = function() {
     this.remove();
@@ -3139,6 +4235,10 @@ FlexPoint.prototype.render = function() {
 
     return this;
 };
+
+/**
+ * Removes the FlexPoint from the canvas
+ */
 
 FlexPoint.prototype.remove = function() {
     if (this.wrapper) this.wrapper.remove();
@@ -3250,16 +4350,16 @@ Palette.prototype.render = function() {
     this.header.setAttribute('class', 'palette-header');
 
     var headerContent = document.createElement('div');
-    var zoomPlus = document.createElement('a');
-    zoomPlus.innerHTML = ' +';
-    var zoomMinus = document.createElement('a');
-    zoomMinus.innerHTML = ' -';
+//    var zoomPlus = document.createElement('a');
+//    zoomPlus.innerHTML = ' +';
+//    var zoomMinus = document.createElement('a');
+//    zoomMinus.innerHTML = ' -';
 
-    zoomPlus.addEventListener('click', function() { diagram.zoom('in'); });
-    zoomMinus.addEventListener('click', function() { diagram.zoom('out'); });
+//    zoomPlus.addEventListener('click', function() { diagram.zoom('in'); });
+//    zoomMinus.addEventListener('click', function() { diagram.zoom('out'); });
 
-    headerContent.appendChild(zoomPlus);
-    headerContent.appendChild(zoomMinus);
+//    headerContent.appendChild(zoomPlus);
+//    headerContent.appendChild(zoomMinus);
     this.header.appendChild(headerContent);
 
     this.body = document.createElement('div');
@@ -3402,7 +4502,6 @@ PaletteGroup.prototype.render = function() {
                         while(i < l && !found) {
                             wrapper = el[i];
                             control = wrapper.controller;
-                            console.log('control', control);
                             found = canCreate(control, tool.shape);
                             i++;
                         }
@@ -3411,7 +4510,7 @@ PaletteGroup.prototype.render = function() {
                             node = new tool.shape(position);
                             if (node) {
                                 found.add(node);
-                                found._renderContent();
+                                found.renderContent();
                                 found.doLayout();
                                 me.palette.currentItem.trigger('created');
                             }
@@ -3515,101 +4614,6 @@ PaletteItem.prototype.remove = function() {
 PaletteItem.prototype.el = function() {
     return this.element;
 };
-
-
-// PropertyBox
-//
-
-var PropertyBox = Ds.PropertyBox = function( attributes ) {
-    attributes || (attributes = {});
-    this.diagram = attributes.diagram;
-    this.x = attributes.x;
-    this.y = attributes.y;
-    this.width = attributes.width ? attributes.width : 340;
-    this.height = attributes.height ? attributes.height : 200;
-
-    return this;
-};
-
-PropertyBox.prototype.render = function() {
-    if (this.root) {
-        return this;
-    }
-
-    this.root = document.createElement('div');
-    this.root.setAttribute('class', 'property-box');
-    this.header = document.createElement('div');
-    this.header.setAttribute('class', 'property-box-header');
-    this.body = document.createElement('div');
-    this.body.setAttribute('class', 'property-box-body');
-
-    this.root.appendChild( this.header );
-    this.root.appendChild( this.body );
-
-    // add exit button
-    var exitButton = document.createElement('a');
-
-    exitButton.setAttribute('style', 'position: relative; font-size: 12px; color: black;');
-    exitButton.style.left = (this.width - 16) + 'px';
-    exitButton.style.cursor = 'default';
-    exitButton.innerHTML = 'X';
-    this.header.appendChild( exitButton );
-
-    var propertyBox = this;
-    exitButton.addEventListener('click', function(evt) {
-        propertyBox.remove();
-    });
-
-    if (typeof PropertyBox.bodyTemplate === 'function') {
-        this.body.innerHTML = PropertyBox.bodyTemplate();
-    }
-
-    this.root.style.left = this.x + 'px';
-    this.root.style.top = this.y + 'px';
-
-    this.diagram.el().appendChild(this.root);
-
-    this.asDraggable();
-
-    return this;
-};
-
-PropertyBox.prototype.asDraggable = function() {
-    if (this.root) {
-        this.header.style.cursor = 'move';
-
-        var box = this;
-        box._moving = false;
-
-        this.header.addEventListener('mousedown', function(evt) {
-            box._moving = true;
-            box.offsetX = evt.pageX - box.x;
-            box.offsetY = evt.pageY - box.y;
-        });
-
-        this.diagram.el().addEventListener('mouseup', function(evt) {
-            box._moving = false;
-        });
-
-        this.diagram.el().addEventListener('mousemove', function(evt) {
-            if (box._moving) {
-                box.x = evt.pageX - box.offsetX;
-                box.y = evt.pageY - box.offsetY;
-                box.root.style.left = box.x + 'px';
-                box.root.style.top = box.y + 'px';
-            }
-        });
-    }
-};
-
-PropertyBox.prototype.remove = function() {
-    if (this.root) {
-        this.diagram.el().removeChild(this.root);
-        this.root = null;
-    }
-};
-
-Ds.ToolBox.propertyBox = PropertyBox;
 
 
 
