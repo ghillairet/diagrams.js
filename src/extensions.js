@@ -35,52 +35,73 @@ Raphael.el.y = function () {
     }
 };
 
-Raphael.el.rdxy = function(dx, dy, direction) {
+var resizeEllipse = function(dx, dy, direction, min, limits) {
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        dy = -dy;
+    }
+    if (_.include(['nw', 'sw', 'n'], direction)) {
+        dx = -dx;
+    }
+    var sumx = this.orx + dx;
+    var sumy = this.orx + dy;
+    return {
+        rx: isNatural(sumx) ? sumx : this.orx,
+            ry: isNatural(sumy) ? sumy : this.ory
+    };
+};
+
+var resizeCircle = function(dx, dy, direction, min, limits) {
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        dy = -dy;
+    }
+    var sumr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
+    return {
+        r: isNatural(sumr) ? sumr : this.or
+    };
+};
+
+var resizeRect = function(dx, dy, direction, min, limits) {
+    var x = this.ox, y = this.oy, w = this.ow, h = this.oh;
+
+    if (direction !== 'n' && direction !== 's') {
+        w = this.ow + dx;
+    }
+    if (direction !== 'w' && direction !== 'e') {
+        h = this.oh + dy;
+    }
+    if (_.include(['sw', 'nw', 'w'], direction)) {
+        w = this.ow - dx;
+        if (w < min.width) {
+            dx = dx - (min.width - w);
+        }
+        x = this.ox + dx;
+    }
+    if (_.include(['ne', 'nw', 'n'], direction)) {
+        h = this.oh - dy;
+        if (h < min.height) {
+            dy = dy - (min.height - h);
+        }
+        y = this.oy + dy;
+    }
+
+    if (h < min.height) h = min.height;
+    if (w < min.width) w = min.width;
+    if (w > limits.width) w = limits.width;
+    if (h > limits.height) h = limits.height;
+    if (x < limits.x) x = limits.x;
+    if (y < limits.y) y = limits.y;
+
+    return { width: w, height: h, y: y, x: x };
+};
+
+Raphael.el.rdxy = function(dx, dy, direction, min, limits) {
     switch (this.type) {
     case 'ellipse':
-        if (direction === 'ne' || direction === 'nw') {
-            dy = -dy;
-        }
-        if (direction === 'nw' || direction === 'sw') {
-            dx = -dx;
-        }
-        var sumx = this.orx + dx;
-        var sumy = this.orx + dy;
-        return {
-            rx: isNatural(sumx) ? sumx : this.orx,
-            ry: isNatural(sumy) ? sumy : this.ory
-        };
+        return resizeEllipse.apply(this, [dx, dy, direciton, min, limits]);
     case 'circle':
-        if (direction === 'ne' || direction === 'nw') {
-            dy = -dy;
-        }
-        var sumr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
-        return {
-            r: isNatural(sumr) ? sumr : this.or
-        };
+        return resizeCircle.apply(this, [dx, dy, direction, min, limits]);
     case 'rect':
-        var w = this.ow + dx;
-        if (direction === 'nw' || direction === 'sw') {
-            w = this.ow - dx;
-        }
-        var h = this.oh + dy;
-        if (direction === 'ne' || direction === 'nw') {
-            h = this.oh - dy;
-        }
-        var y = this.oy;
-        var x = this.ox;
-        if (direction === 'sw' || direction === 'nw') {
-            x = this.ox + dx;
-        }
-        if (direction === 'ne' || direction === 'nw') {
-            y = this.oy + dy;
-        }
-        return {
-            width: isNatural(w) ? w : this.ow,
-            height: isNatural(h) ? h : this.oh,
-            y: y,
-            x: x
-        };
+        return resizeRect.apply(this, [dx, dy, direction, min, limits]);
     default:
         return {};
     }
@@ -153,7 +174,7 @@ Raphael.el.getABox = function() {
     o.bottomRight = { x: o.xRight,    y: o.yBottom };
 
     // corners
-    o.top     = { x: o.xCenter,   y: o.yTop };
+    o.top         = { x: o.xCenter,   y: o.yTop };
     o.bottom      = { x: o.xCenter,   y: o.yBottom };
     o.left        = { x: o.xLeft,     y: o.yMiddle };
     o.right       = { x: o.xRight,    y: o.yMiddle };
@@ -165,10 +186,19 @@ Raphael.el.getABox = function() {
 };
 
 // Polyline support.
-Raphael.fn.polyline = function (x,y) {
-    var poly = ['M',x,y,'L'];
-    for (var i=2;i<arguments.length;i++) {
+Raphael.fn.polyline = function(x,y) {
+    var poly = ['M', x, y, 'L'];
+    for (var i = 2; i < arguments.length; i++) {
         poly.push(arguments[i]);
     }
     return this.path(poly.join(' '));
 };
+
+// Triangles
+Raphael.fn.triangle = function(x, y, size) {
+  var path = ["M", x, y];
+  path = path.concat(["L", (x + size / 2), (y + size)]);
+  path = path.concat(["L", (x - size / 2), (y + size)]);
+  return this.path(path.concat(["z"]).join(" "));
+};
+
