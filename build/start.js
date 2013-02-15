@@ -2,18 +2,16 @@
 //     Diagrams.js 0.1.0
 //     JavaScript Diagramming Library.
 //
-//     © 2012 Guillaume Hillairet.
+//     © 2013 Guillaume Hillairet.
+//     EPL License (http://www.eclipse.org/legal/epl-v10.html)
 
-(function(root) {
+(function(exports) {
 
     "use strict";
-
-//    var root = this;
 
     var Ds = {
         version: '0.1.0'
     };
 
-    root.Ds = Ds;
-    root.Diagrams = Ds;
+    exports.Ds = Ds;
 
