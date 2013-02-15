@@ -11,6 +11,11 @@ module.exports = function(grunt) {
                     'src/base/Line.js',
                     'src/base/Events.js',
                     'src/base/Element.js',
+                    'src/figures/Figure.js',
+                    'src/figures/Rectangle.js',
+                    'src/figures/Circle.js',
+                    'src/figures/Ellipse.js',
+                    'src/figures/Path.js',
                     'src/diagram/DiagramElement.js',
                     'src/layout/Layout.js',
                     'src/diagram/LayoutElement.js',
@@ -76,6 +81,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jsdoc-plugin');
 
     grunt.registerTask('test', 'concat mocha');
-    grunt.registerTask('build', 'concat mocha jsdoc min');
+    grunt.registerTask('build', 'concat min');
+    grunt.registerTask('doc', 'jsdoc');
 
 };
