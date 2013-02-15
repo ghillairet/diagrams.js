@@ -57,11 +57,11 @@
     var UMLExtend = Ds.Connection.extend({
         figure: {
             stroke: 'black',
-        'stroke-width': 2
+            'stroke-width': 2
         },
         end: {
             fill: 'white',
-        type: 'basic'
+            type: 'basic'
         }
     });
 
@@ -70,22 +70,13 @@
         draggable: false,
         figure: {
             type: 'text',
-        text: ' + name: String',
-        height: 20,
-        stroke: 'blue',
-        position: 'center-left'
+            text: ' + name: String',
+            height: 20,
+            stroke: 'blue',
+            position: 'center-left'
         }
     });
-    /**
-      var PCLabel = {
-      figure: {
-      type: 'text',
-      fill: '#EFEFFF',
-      text: 'attributes',
-      position: 'center-left'
-      }
-      };
-     **/
+
     var PropertyCompartment = {
         compartment: true,
         figure: {
@@ -102,32 +93,16 @@
         },
         accepts: [ UMLProperty ]
     };
-    /**
-      var PCShape = {
-      figure: {
-      type: 'rect',
-      height: 20,
-      fill: 'none',
-      stroke: '#615E62',
-      'stroke-width': 2
-      },
-      layout: {
-      type: 'flex',
-      columns: 1,
-      stretch: true
-      },
-      children: [ PCLabel, PropertyCompartment ]
-      };
-     **/
+
     var UMLOperation = Ds.Label.extend({
         resizable: false,
         draggable: false,
         figure: {
             type: 'text',
-        text: '+ name(): String',
-        height: 20,
-        stroke: 'blue',
-        position: 'center-left'
+            text: '+ name(): String',
+            height: 20,
+            stroke: 'blue',
+            position: 'center-left'
         }
     });
 
@@ -137,7 +112,6 @@
             type: 'rect',
             height: 20,
             fill: 'none',
-            //            stroke: '#615E62',
             stroke: 'none',
             'stroke-width': 2
         },
@@ -161,49 +135,49 @@
     var UMLClass = Ds.Shape.extend({
         figure: {
             type: 'rect',
-        width: 100,
-        height: 60,
-        r: 8,
-        fill: '235-#FDFDFF-#F2F2FF',
-        opacity: 1,
-        stroke: '#615E62',
-        'stroke-width': 2,
-        'stroke-opacity': 1
+            width: 100,
+            height: 60,
+            r: 8,
+            fill: '235-#FDFDFF-#F2F2FF',
+            opacity: 1,
+            stroke: '#615E62',
+            'stroke-width': 2,
+            'stroke-opacity': 1
         },
         layout: {
             type: 'flex',
-        columns: 1,
-        stretch: true
+            columns: 1,
+            stretch: true
         },
         children: [
-        UMLClassLabel,
-        PropertyCompartment,
-        OperationCompartment
-            ],
+            UMLClassLabel,
+            PropertyCompartment,
+            OperationCompartment
+        ],
         initialize: function() {}
     });
 
     var UMLGroup = {
         title: 'UML',
         tools: [
-        { title: 'Class', shape: UMLClass },
-        { title: 'Property', shape: UMLProperty },
-        { title: 'Operation', shape: UMLOperation },
-        { title: 'Association', edge: UMLAssociation },
-        { title: 'Extend', edge: UMLExtend }
+            { title: 'Class', shape: UMLClass },
+            { title: 'Property', shape: UMLProperty },
+            { title: 'Operation', shape: UMLOperation },
+            { title: 'Association', edge: UMLAssociation },
+            { title: 'Extend', edge: UMLExtend }
         ]
     };
 
     var Palette = Ds.Palette.extend({
         groups: [
-        UMLGroup
+            UMLGroup
         ]
     });
 
     var UMLDiagram = Ds.Diagram.extend({
         el: 'diagram',
         children: [
-        UMLClass
+            UMLClass
         ]
     });
 

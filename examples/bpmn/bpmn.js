@@ -55,6 +55,7 @@
             stroke: 'black',
             'stroke-width': 2
         },
+        layout: { type: 'xy' },
         children: [ MailTriangle ]
     };
 
@@ -91,12 +92,13 @@
         figure: {
             type: 'circle',
             r: 18,
-            cx: 25,
-            cy: 25,
+            x: 25,
+            y: 25,
             fill: 'white',
             stroke: 'black',
             'stroke-width': 2
         },
+        layout: { type: 'xy' },
         children: [ ClockHands ]
     };
 
@@ -168,9 +170,11 @@
     var diagram = new BPMNDiagram();
 
     var mail = new EventMail({ x: 100, y: 100, diagram: diagram });
+
     var timer = new Timer({ x: 250, y: 100, diagram: diagram });
     var c1 = new SequenceFlow({ diagram: diagram });
     c1.connect(mail, timer);
+    /**
     var task1 = new Task({ x: 350, y: 65, diagram: diagram });
     var c2 = new SequenceFlow({ diagram: diagram });
     c2.connect(timer, task1);
@@ -180,7 +184,7 @@
     var task2 = new Task({ x: 650, y: 65, diagram: diagram });
     var c4 = new SequenceFlow({ diagram: diagram });
     c4.connect(gt, task2);
-
+    **/
     diagram.render();
 
 })(window.Ds);

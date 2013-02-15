@@ -90,22 +90,51 @@
         }
     });
 
-    var EAttributeCompartment = {
-        compartment: true,
+    var EAttributeCompartment = Ds.Shape.extend({
+        draggable: false,
+        resizable: false,
+        selectable: false,
         figure: {
             type: 'rect',
             height: 20,
-            fill: 'none',
+            fill: 'white',
+            'fill-opacity': 0,
             stroke: '#D8D8D1',
             'stroke-width': 2
         },
         layout: {
-            type: 'flex',
-            columns: 1,
-            stretch: false
+            type: 'grid',
+            columns: 1
         },
-        accepts: [ EAttribute ]
-    };
+        accepts: [
+            EAttribute
+        ],
+        initialize: function() {
+            this.on('click', this.addElement);
+            this.on('mouseover', this.handleMouseOver);
+        },
+        handleMouseOver: function(e) {
+            if (palette.currentItem) {
+                var fnShape = palette.currentItem.shape;
+                if (this.canAdd(fnShape)) {
+                    this.set('cursor', 'copy');
+                } else {
+                    this.set('cursor', 'no-drop');
+                }
+            }
+        },
+        addElement: function(e) {
+            if (palette.currentItem) {
+                var fnShape = palette.currentItem.shape;
+                if (this.canAdd(fnShape)) {
+                    var shape = new fnShape({});
+                    this.add(shape);
+                    this.parent.render();
+                    palette.currentItem = null;
+                }
+            }
+        }
+    });
 
     var EOperation = Ds.Label.extend({
         resizable: false,
@@ -119,22 +148,25 @@
         }
     });
 
-    var EOperationCompartment = {
-        compartment: true,
+    var EOperationCompartment = Ds.Shape.extend({
+        resizable: false,
+        draggable: false,
+        selectable: false,
+
         figure: {
             type: 'rect',
             height: 20,
-            fill: 'none',
+            fill: 'white',
+            'fill-opacity': 0,
             stroke: 'none',
             'stroke-width': 2
         },
         layout: {
-            type: 'flex',
-            columns: 1,
-            stretch: false
+            type: 'grid',
+            columns: 1
         },
         accepts: [ EOperation ]
-    };
+    });
 
     var EClassLabel = {
         figure: {
