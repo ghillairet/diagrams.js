@@ -6,7 +6,7 @@
 
     var Container = Ds.Shape.extend({
         resizable: false,
-        draggable: false,
+        draggable: true,
         toolbox: false,
         figure: {
             type: 'rect',
@@ -45,6 +45,4 @@
     container.add(r2);
 
     diagram.render();
-
-
 })(window.Ds);

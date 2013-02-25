@@ -168,14 +168,15 @@
     });
 
     var diagram = new BPMNDiagram();
-
     var mail = new EventMail({ x: 100, y: 100, diagram: diagram });
 
     var timer = new Timer({ x: 250, y: 100, diagram: diagram });
+
     var c1 = new SequenceFlow({ diagram: diagram });
     c1.connect(mail, timer);
-    /**
+
     var task1 = new Task({ x: 350, y: 65, diagram: diagram });
+
     var c2 = new SequenceFlow({ diagram: diagram });
     c2.connect(timer, task1);
     var gt = new Gateway({ x: 500, y: 75, diagram: diagram });
@@ -184,7 +185,9 @@
     var task2 = new Task({ x: 650, y: 65, diagram: diagram });
     var c4 = new SequenceFlow({ diagram: diagram });
     c4.connect(gt, task2);
-    **/
+
     diagram.render();
+
+    console.log(diagram);
 
 })(window.Ds);

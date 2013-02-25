@@ -1,17 +1,67 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Shapes</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-</head>
-<body>
-    <div>
-        <div id="diagram" style="background: white; width: 2000px; height: 5000px"></div>
-    </div>
+    <head>
+        <title>Shapes</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <style type="text/css">
+            .row {
+                padding: 6px;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <div id="diagram" style="background: white; left: 0; top: 0; bottom: 5px; right: 300px; position: absolute;"></div>
+            <div id="palette" style="position: absolute; background: whitesmoke; width: 300px; right: 0; top: 0; bottom: 0;">
+                <div class="row">
+                    <button id="add-shape">Add</button>
+                    <button id="clear">Clear</button>
+                </div>
+                <div class="row">
+                    <label>columns </label><input type="text" value="2" id="columnsInput">
+                </div>
+                <div class="row">
+                    <label>columnsEqualWidth </label><input type="radio" value="1" id="columnsEqualWidthInput">
+                </div>
+                <div class="row">
+                    <label>marginHeight </label>
+                    <select id="marginHeightSelect">
+                        <option>0</option>
+                        <option selected>5</option>
+                        <option>10</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>marginWidth </label>
+                    <select id="marginWidthSelect">
+                        <option>0</option>
+                        <option selected>5</option>
+                        <option>10</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>horizontal Spacing </label>
+                    <select id="hgapSelect">
+                        <option selected>0</option>
+                        <option>5</option>
+                        <option>10</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>vertical Spacing </label>
+                    <select id="vgapSelect">
+                        <option selected>0</option>
+                        <option>5</option>
+                        <option>10</option>
+                    </select>
+                </div>
+                <button id="submit">render</button>
+            </div>
+        </div>
 
-    <script type="text/javascript" src="../../lib/raphael.js"></script>
-    <script type="text/javascript" src="../../lib/underscore.js"></script>
-    <script type="text/javascript" src="../../dist/diagrams.js"></script>
-    <script type="text/javascript" src="grid.js"></script>
-</body>
+        <script type="text/javascript" src="../../lib/raphael.js"></script>
+        <script type="text/javascript" src="../../lib/underscore.js"></script>
+        <script type="text/javascript" src="../../dist/diagrams.js"></script>
+        <script type="text/javascript" src="grid.js"></script>
+    </body>
 

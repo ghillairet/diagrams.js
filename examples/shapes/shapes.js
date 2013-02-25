@@ -98,14 +98,14 @@
 
     var dia = new ShapeDiagram();
     var c1 = new Circle({ x: 100, y: 100, diagram: dia });
-//    var c2 = new Circle({ x: 300, y: 120, diagram: dia });
+    var c2 = new Circle({ x: 300, y: 120, diagram: dia });
     var s1 = new Square({ x: 400, y: 150, diagram: dia, resizable: true });
-//    var s2 = new Square({ x: 500, y: 150, diagram: dia, draggable: false });
-//    var t = new Triangle({ x: 100, y: 200, diagram: dia });
-//    var d = new Diamond({ x: 300, y: 220, diagram: dia });
-//    var s = new Star({ x: 400, y: 260, diagram: dia });
+    var s2 = new Square({ x: 500, y: 150, diagram: dia, draggable: false });
+    var t = new Triangle({ x: 100, y: 200, diagram: dia });
+    var d = new Diamond({ x: 300, y: 220, diagram: dia });
+    var s = new Star({ x: 400, y: 260, diagram: dia });
 
-//    d.on('click', function() { alert('Clicked!!'); });
+//  d.on('click', function() { alert('Clicked!!'); });
 
     dia.render();
 

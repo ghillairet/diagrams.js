@@ -2,43 +2,6 @@
 
     var resourceSet = Ecore.ResourceSet.create();
 
-    // dnd
-
-    function handleFileSelect(e) {
-        e.stopPropagation();
-        e.preventDefault();
-
-        var startByte = e.target.getAttribute('data-startbyte');
-        var endByte = e.target.getAttribute('data-endbyte');
-
-        var files = e.dataTransfer.files;
-        var file = files[0];
-        var reader = new FileReader();
-
-        reader.onloadend = function(e) {
-            if (e.target.readyState == FileReader.DONE) {
-                var data = e.target.result;
-                var res = resourceSet.create({ uri: file.name  });
-                res.parse(data, Ecore.XMI);
-                resourceSet.trigger('change');
-                console.log(resourceSet);
-            }
-        };
-
-        var blob = file.slice(0, file.size);
-        reader.readAsBinaryString(blob);
-    }
-
-    function handleDragOver(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-    }
-
-    var dropzone = document.getElementById('diagram');
-    dropzone.addEventListener('dragover', handleDragOver, false);
-    dropzone.addEventListener('drop', handleFileSelect, false);
-
     var UMLAssociation = Ds.Connection.extend({
         figure: {
             stroke: 'black',
@@ -72,27 +35,37 @@
             type: 'text',
             text: ' + name: String',
             height: 20,
+            width: 100,
             stroke: 'blue',
             position: 'center-left'
+        },
+        gridData: {
+            horizontalAlignment: 'beginning'
         }
     });
 
-    var PropertyCompartment = {
-        compartment: true,
+    var PropertyCompartment = Ds.Shape.extend({
         figure: {
             type: 'rect',
             height: 20,
+            width: 100,
             fill: 'none',
             stroke: '#615E62',
             'stroke-width': 2
         },
         layout: {
-            type: 'flex',
-            columns: 1,
-            stretch: false
+            type: 'grid',
+            columns: 1
+        },
+        gridData: {
+            horizontalAlignment: 'fill',
+            verticalAlignment: 'fill',
+            grabExcessHorizontalSpace: true,
+            grabExcessVerticalSpace: false
         },
         accepts: [ UMLProperty ]
-    };
+
+    });
 
     var UMLOperation = Ds.Label.extend({
         resizable: false,
@@ -106,29 +79,64 @@
         }
     });
 
-    var OperationCompartment = {
-        compartment: true,
+    var OperationCompartment = Ds.Shape.extend({
+        selectable: false,
+        draggable: false,
+        resizable: false,
+
         figure: {
             type: 'rect',
             height: 20,
-            fill: 'none',
+            width: 100,
+            fill: 'white',
+            'fill-opacity': 0,
             stroke: 'none',
             'stroke-width': 2
         },
+
         layout: {
-            type: 'flex',
-            columns: 1,
-            stretch: false
+            type: 'grid',
+            columns: 1
         },
-        accepts: [ UMLOperation ]
-    };
+
+        gridData: {
+            horizontalAlignment: 'fill',
+            verticalAlignment: 'fill',
+            grabExcessHorizontalSpace: true,
+            grabExcessVerticalSpace: false
+        },
+
+        accepts: [ UMLOperation ],
+
+        initialize: function(attributes) {
+            console.log('here');
+            this.on('click', this.addElement);
+        },
+
+        addElement: function() {
+            if (this.diagram.currentItem) {
+                var element = new this.diagram.currentItem({});
+                console.log(element);
+                if (element instanceof UMLOperation) {
+                    this.add(element);
+                    this.render();
+                }
+            }
+            console.log(this.diagram);
+        }
+    });
 
     var UMLClassLabel = {
         figure: {
             type: 'text',
             text: 'Class',
-            height: 30,
+            height: 20,
+            width: 100,
             'font-size': 16
+        },
+        gridData: {
+            grabExcessHorizontalSpace: true,
+            horizontalAlignment: 'center'
         }
     };
 
@@ -137,7 +145,7 @@
             type: 'rect',
             width: 100,
             height: 60,
-            r: 8,
+            r: 4,
             fill: '235-#FDFDFF-#F2F2FF',
             opacity: 1,
             stroke: '#615E62',
@@ -145,9 +153,13 @@
             'stroke-opacity': 1
         },
         layout: {
-            type: 'flex',
+            type: 'grid',
             columns: 1,
-            stretch: true
+            hgap: 0,
+            vgap: 0,
+            marginWidth: 0,
+            marginHeight: 0,
+            columnsEqualWidth: false
         },
         children: [
             UMLClassLabel,

@@ -75,6 +75,7 @@
             type: 'text',
             text: 'name: EString',
             height: 20,
+            width: 160,
             stroke: 'blue',
             position: 'center-left'
         },
@@ -94,25 +95,36 @@
         draggable: false,
         resizable: false,
         selectable: false,
+
         figure: {
             type: 'rect',
             height: 20,
-            fill: 'white',
-            'fill-opacity': 0,
+            width: 160,
+            fill: 'red',
+            'fill-opacity': 0.7,
             stroke: '#D8D8D1',
             'stroke-width': 2
         },
+
         layout: {
             type: 'grid',
             columns: 1
         },
+
+        gridData: {
+            grabExcessVerticalSpace: true,
+            grabExcessHorizontalSpace: true
+        },
+
         accepts: [
             EAttribute
         ],
+
         initialize: function() {
             this.on('click', this.addElement);
             this.on('mouseover', this.handleMouseOver);
         },
+
         handleMouseOver: function(e) {
             if (palette.currentItem) {
                 var fnShape = palette.currentItem.shape;
@@ -123,6 +135,7 @@
                 }
             }
         },
+
         addElement: function(e) {
             if (palette.currentItem) {
                 var fnShape = palette.currentItem.shape;
@@ -139,10 +152,12 @@
     var EOperation = Ds.Label.extend({
         resizable: false,
         draggable: false,
+
         figure: {
             type: 'text',
             text: 'op(): EString',
             height: 20,
+            width: 160,
             stroke: 'blue',
             position: 'center-left'
         }
@@ -156,15 +171,18 @@
         figure: {
             type: 'rect',
             height: 20,
-            fill: 'white',
-            'fill-opacity': 0,
+            width: 160,
+            fill: 'blue',
+            'fill-opacity': 0.4,
             stroke: 'none',
             'stroke-width': 2
         },
+
         layout: {
             type: 'grid',
             columns: 1
         },
+
         accepts: [ EOperation ]
     });
 
@@ -172,8 +190,9 @@
         figure: {
             type: 'text',
             text: 'EClass',
-            height: 30,
-            'font-size': 14
+            height: 40,
+            width: 160,
+            'font-size': 12
         }
     };
 
@@ -191,7 +210,9 @@
         layout: {
             type: 'flex',
             columns: 1,
-            stretch: true
+            rows: 3,
+            stretch: true,
+            vertical: true
         },
         children: [
             EClassLabel,
