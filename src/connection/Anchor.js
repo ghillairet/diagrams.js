@@ -14,6 +14,18 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
         this.diagram = this.connection.diagram;
     },
 
+    bounds: function() {
+        if (this.wrapper)
+            return this.wrapper.getABox();
+        else return null;
+    },
+
+    position: function() {
+        if (this.connection.get('sourceAnchor') === this)
+            return 'source';
+        else return 'end';
+    },
+
     /**
      * Moves the connection anchor to the given point
      *
@@ -34,9 +46,7 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
      */
 
     render: function() {
-        if (this.wrapper) {
-            return this;
-        }
+        if (this.wrapper) return this;
 
         var paper = this.paper();
         this.wrapper = paper.rect( this.x - 3, this.y - 3, 6, 6 );
@@ -52,16 +62,45 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
      */
 
     remove: function() {
-        if (this.wrapper) {
-            this.wrapper.remove();
+        if (this.wrapper) this.wrapper.remove();
+    },
+
+    getConnectableElement: function() {
+        var anchor = this;
+        var wrapper = this.wrapper;
+        var connection = this.connection;
+        var foundShapes = this.diagram.getShapesByPoint(this.x, this.y);
+
+        var connectable = function(memo, shape) {
+            if (connection.canConnect(shape, anchor.position()))
+                memo.push(shape);
+            return memo;
+        };
+        var connectables = _.reduceRight(foundShapes, connectable, []);
+
+        return connectables.length ? connectables[0] : null;
+    },
+
+    establishConnection: function(shape) {
+        var anchor = this;
+        var wrapper = this.wrapper;
+        var isTarget;
+
+        if (shape) anchor.shape = shape;
+        anchor.connection.state = null;
+
+        if (this.position() === 'end') {
+            anchor.connection.connect( anchor.connection.get('sourceAnchor').shape, anchor.shape );
+        } else {
+            anchor.connection.connect( anchor.shape, anchor.connection.get('targetAnchor').shape );
         }
+        anchor.connection.render();
     },
 
     asDraggable: function() {
 
         var move = function( dx, dy ) {
             this.attr({ x: this.ox + dx, y: this.oy + dy });
-            // TODO change that.
             this.anchor.connection.state = 'dragging';
             this.anchor.connection.dragger = this.anchor;
             this.anchor.connection.render();
@@ -73,25 +112,8 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
         };
 
         var end = function() {
-            var paper = this.paper;
-            var unders = paper.getElementsByPoint( this.attr('x'), this.attr('y') );
-            var el = _.find(unders, function(under) {
-                return (under !== this.anchor && under.controller);
-            }, this);
-
-            if (el) {
-                this.anchor.shape = el.controller;
-            }
-
-            this.anchor.connection.state = null;
-            var isTarget = this.anchor.connection.get('targetAnchor') === this.anchor;
-
-            if (isTarget) {
-                this.anchor.connection.connect( this.anchor.connection.get('sourceAnchor').shape, this.anchor.shape );
-            } else {
-                this.anchor.connection.connect( this.anchor.shape, this.anchor.connection.get('targetAnchor').shape );
-            }
-            this.anchor.connection  .render();
+            var shape = this.anchor.getConnectableElement();
+            if (shape) this.anchor.establishConnection(shape);
         };
 
         this.wrapper.drag(move, start, end);
@@ -100,7 +122,32 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
     },
 
     attach: function( shape ) {
+        var bounds = shape.bounds();
+        if (bounds.xCenter && bounds.yMiddle) {
+            this.x = bounds.xCenter;
+            this.y = bounds.yMiddle;
+        }
         this.shape = shape;
+        return this;
+    },
+
+    hide: function() {
+        if (this.wrapper) this.wrapper.hide();
+        return this;
+    },
+
+    show: function() {
+        if (this.wrapper) this.wrapper.show();
+        return this;
+    },
+
+    toFront: function() {
+        if (this.wrapper) this.wrapper.toFront();
+        return this;
+    },
+
+    toBack: function() {
+        if (this.wrapper) this.wrapper.toBack();
         return this;
     },
 

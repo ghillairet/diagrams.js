@@ -26,9 +26,7 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
      */
 
     remove: function() {
-        if (this.wrapper) {
-            this.wrapper.remove();
-        }
+        if (this.wrapper) this.wrapper.remove();
     },
 
     /**
@@ -55,8 +53,8 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
 
         var placeLabelEnd = function() {
             var anchor = connection.get('targetAnchor'),
-                sbox = anchor.shape.wrapper.getABox(),
-                abox = anchor.wrapper.getABox(),
+                sbox = anchor.shape.bounds();
+                abox = anchor.bounds(),
                 x = abox.xCenter,
                 y = abox.yMiddle;
 
@@ -68,8 +66,8 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
 
         var placeLabelStart = function() {
             var anchor = connection.get('sourceAnchor'),
-                sbox = anchor.shape.wrapper.getABox(),
-                abox = anchor.wrapper.getABox(),
+                sbox = anchor.shape.bounds(),
+                abox = anchor.bounds(),
                 x = abox.xCenter,
                 y = abox.yMiddle;
 
@@ -79,8 +77,8 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
         var placeLabelMiddle = function() {
             var sa = connection.get('sourceAnchor'),
                 ta = connection.get('targetAnchor'),
-                sabox = sa.wrapper.getABox(),
-                tabox = ta.wrapper.getABox(),
+                sabox = sa.bounds(),
+                tabox = ta.bounds(),
                 x1 = sabox.xCenter,
                 y1 = sabox.yMiddle,
                 x2 = tabox.xCenter,
@@ -169,7 +167,7 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
         }
 
         var createInputTextForm = function( label ) {
-            var aBox = label.wrapper.getABox();
+            var aBox = label.bounds();
 
             var diagram = label.connection.diagram;
             var px = diagram.canvas().offsetLeft;
@@ -191,7 +189,8 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
             txt.appendChild(inputForm);
 
             return {
-                form: txt, input: inputForm
+                form: txt,
+                input: inputForm
             };
         };
 

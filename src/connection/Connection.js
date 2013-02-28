@@ -14,11 +14,14 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         this.set('targetAnchor', new ConnectionAnchor({ connection: this }));
         this.vertices = [];
 
+        /*
         this.labels = _.map(this.labels || [], function(label) {
             return new ConnectionLabel({ connection: this,
                 position: label.position,
                 text: label.text
         });}, this);
+        */
+        this.labels = [];
 
         if (this.toolbox) this._tool = new ToolBox({ element: this });
 
@@ -56,8 +59,12 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
      */
 
     remove: function(diagram) {
-        if (this.wrapper) this.wrapper.remove();
-        if (this.dummy) this.dummy.remove();
+        if (this.wrapper) {
+            this.unBindEvents();
+            this.wrapper.remove();
+            this.dummy.remove();
+        }
+
         if (this.startArrow) this.startArrow.remove();
         if (this.endArrow) this.endArrow.remove();
         if (this._tool) this._tool.remove();
@@ -80,35 +87,46 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         return this;
     },
 
-    /**
-     * Renders the connection on canvas, will only render if the
-     * source and target are set.
-     */
-
-    render: function() {
-        var boxes = this._boxes(),
-            sbox = boxes[0],
-            tbox = boxes[1],
-            points = this._points(sbox, tbox),
-            sPoint = points[0],
-            tPoint = points[1],
-            th, c1r, c2r;
-
-        if (!sPoint || !tPoint) return this;
-
-        this.remove();
+    renderConnectionEnd: function(boxes, points) {
+        var paper = this.paper();
+        var sbox = boxes[0];
+        var tbox = boxes[1];
+        var sPoint = points[0];
+        var tPoint = points[1];
+        var th;
 
         if (this.vertices.length) {
-            th = theta(this.vertices[this.vertices.length - 1], tbox.center);
+            th = Point.theta(this.vertices[this.vertices.length - 1], tbox.center);
         } else {
-            th = theta(sbox.center, tbox.center);
+            th = Point.theta(sbox.center, tbox.center);
         }
-        c1r = 360 - th.degrees + 180;
-        c2r = 360 - th.degrees;
+
+        // angles for arrows
+        var c1r = 360 - th.degrees + 180;
+        var c2r = 360 - th.degrees;
+
+        this.startArrow = new ConnectionEnd(paper, sPoint, c1r, th.radians, this.start);
+        this.endArrow = new ConnectionEnd(paper, tPoint, c2r, th.radians, this.end);
+        this.startArrow.render();
+        this.endArrow.render();
+    },
+
+    renderAnchors: function(points) {
+        var sPoint = points[0];
+        var tPoint = points[1];
 
         this.get('sourceAnchor').move(sPoint).render().hide();
         this.get('targetAnchor').move(tPoint).render().hide();
+    },
 
+    /**
+     * Creates the connection's path between the source and target anchors and the in
+     * between flex points.
+     *
+     * @private
+     */
+
+    createPath: function() {
         var paths = path(this.get('sourceAnchor'), this.get('targetAnchor'), this.vertices, false),
             paper = this.paper();
 
@@ -116,41 +134,97 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         this.wrapper.attr(this.attributes);
         this.wrapper.controller = this;
 
-        this.startArrow = new ConnectionEnd(paper, sPoint, c1r, th.radians, this.start);
-        this.startArrow.render();
-        this.endArrow = new ConnectionEnd(paper, tPoint, c2r, th.radians, this.end);
-        this.endArrow.render();
+        return paths;
+    },
 
+    /*
+     * Creates a larger path on top of the connection's path to receive
+     * user events.
+     *
+     * @private
+     */
+
+    createEventPath: function(paths) {
+        var paper = this.paper();
         // Dummy is a larger line receiving clicks from users
         this.dummy = paper.path(paths.join(' '));
         this.dummy.connection = this;
         this.dummy.attr({ cursor: 'pointer', fill: 'none', opacity: 0, 'stroke-width': 8 });
+    },
 
-        var me = this;
-        this.dummy.dblclick(function(e) { me.trigger('dblclick', e); });
-        this.dummy.click(function(e) { me.trigger('click', e); });
+    _events: [
+        'click', 'dblclick',
+        'mouseover', 'mouseout'
+    ],
 
-        this.on('click', this._handleClick);
-        this.on('dblclick', this._createFlexPoint);
+    /**
+     * @private
+     */
+
+    bindEvents: function() {
+        var connection = this;
+        var wrapper = this.dummy;
+        var createHandler = function(eve) {
+            return {
+                eve: eve,
+                handler: function(e) { connection.trigger(eve, e); }
+            };
+        };
+        var bind = function(call) { wrapper[call.eve](call.handler); };
+
+        this.eveHandlers = _.map(this._events, createHandler);
+        _.each(this.eveHandlers, bind);
+    },
+
+    /**
+     * @private
+     */
+
+    unBindEvents: function() {
+        var wrapper = this.dummy;
+        var unbind = function(call) { wrapper['un' + call.eve](call.handler); };
+
+        _.each(this.eveHandlers, unbind);
+        this.eveHandlers.length = 0;
+    },
+
+    /**
+     * Renders the connection on canvas, will only render if the
+     * source and target are set.
+     */
+
+    render: function() {
+        var boxes = this.getBoxes();
+        var points = this.getPoints(boxes);
+
+        if (points.length !== 2) return this;
+
+        this.remove();
+
+        this.renderAnchors(points);
+        this.createEventPath(this.createPath());
+        this.renderConnectionEnd(boxes, points);
+        this.bindEvents();
+
+        this.on('click', this.showToolBox);
+        this.on('click', this.select);
+        this.on('dblclick', this.createFlexPoint);
 
         if (this.labels) _.each(this.labels, function(l) { l.render(); });
 
         return this;
     },
 
-    _handleClick: function(e) {
-        var tool = this._tool,
-            diagram = this.diagram;
-
-        this.select();
+    showToolBox: function(e) {
+        var tool = this._tool;
+        var diagram = this.diagram;
 
         if (tool) tool.render();
-        if (diagram.selected)
-            diagram.selected.deselect();
     },
 
-    _createFlexPoint: function(e) {
-        this.addPoint({ x: e.clientX, y: e.clientY });
+    createFlexPoint: function(e) {
+        var point = Point.get(this.diagram, e);
+        this.addPoint(point);
         this.select();
     },
 
@@ -160,6 +234,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
      */
 
     select: function() {
+        this.diagram.setSelection(this);
         this.get('sourceAnchor').toFront().show();
         this.get('targetAnchor').toFront().show();
         _.each(this.vertices, function(v) { v.render(); });
@@ -226,6 +301,44 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         return this;
     },
 
+    connectByDragging: function(source, e) {
+        var diagram = this.diagram;
+        var paper = diagram.paper();
+        var connection = this;
+        var dragger = this.dragger = this.get('targetAnchor');
+        var draggerPoint = Point.get(paper, e);
+
+        this.set('source', source);
+        this.get('sourceAnchor').attach(source);
+        source.outs.push(this);
+
+        this.state = 'dragging';
+        this.dragger.move(draggerPoint);
+        this.dragger.render();
+
+        var onmove = function(e) {
+            var point = Point.get(paper, e);
+            dragger.move(point);
+            connection.render();
+        };
+        var onup = function(e) {
+            var underShape = dragger.getConnectableElement();
+            if (underShape) {
+                dragger.establishConnection(underShape);
+                diagram.off('mouseup', onup);
+                diagram.off('mousemove', onmove);
+                diagram.wrapper.toBack();
+            }
+        };
+        diagram.wrapper.toFront();
+        diagram.on('mousemove', onmove);
+        diagram.on('mouseup', onup);
+    },
+
+    canConnect: function(shape, position) {
+        return true;
+    },
+
     /**
      * Returns a JSON representation of the connection
      */
@@ -251,21 +364,21 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     // Returns the ABox of this source and target shapes, or if
     // during a drag state returns the dragged anchor ABox.
 
-    _boxes: function() {
+    getBoxes: function() {
         var paper = this.paper(),
         sbox, tbox;
 
-        if (this.state && this.state === 'dragging') {
+        if (this.state === 'dragging') {
             if (this.dragger === this.get('sourceAnchor')) {
-                sbox = this.get('sourceAnchor').wrapper.getABox();
-                tbox = this.get('target').wrapper.getABox();
+                sbox = this.get('sourceAnchor').bounds();
+                tbox = this.get('target').bounds();
             } else {
-                sbox = this.get('source').wrapper.getABox();
-                tbox = this.get('targetAnchor').wrapper.getABox();
+                sbox = this.get('source').bounds();
+                tbox = this.get('targetAnchor').bounds();
             }
         } else {
-            sbox = this.get('source').wrapper.getABox();
-            tbox = this.get('target').wrapper.getABox();
+            sbox = this.get('source').bounds();
+            tbox = this.get('target').bounds();
         }
 
         return [sbox, tbox];
@@ -275,8 +388,10 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     // boxes and the Line joining their center. The points of intersection
     // are the start and end of the Connection.
 
-    _points: function(sbox, tbox) {
+    getPoints: function(boxes) {
         var paper = this.paper(),
+            sbox = boxes[0],
+            tbox = boxes[1],
             line, sPoint, tPoint;
 
         if (this.vertices.length) {
@@ -293,76 +408,15 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
             line.remove();
         }
 
-        return [sPoint, tPoint];
+        if (!sPoint) sPoint = { x: sbox.xCenter, y: sbox.yMiddle };
+        if (!tPoint) tPoint = { x: tbox.xCenter, y: tbox.yMiddle };
+
+        return [new Point(sPoint), new Point(tPoint)];
     }
 
 });
 
 _.extend(Ds.Connection.prototype, Ds.Events);
-
-/**
- * @name FlexPoint
- * @class Represents a flex point being part of a connection
- *
- */
-
-function FlexPoint(connection, point) {
-    this.connection = connection;
-    this.paper = connection.paper();
-    this.x = point.x;
-    this.y = point.y;
-}
-
-/**
- * Renders the FlexPoint on the canvas
- */
-
-FlexPoint.prototype.render = function() {
-    this.remove();
-
-    this.wrapper = this.paper.rect(this.x - 3, this.y - 3, 6, 6, 0);
-    this.wrapper.attr({ fill: 'black', stroke: 'none', cursor: 'pointer' });
-
-    this.drag();
-    this.wrapper.toFront();
-
-//    this.wrapper.dblclick(this.remove);
-
-    return this;
-};
-
-/**
- * Removes the FlexPoint from the canvas
- */
-
-FlexPoint.prototype.remove = function() {
-    if (this.wrapper) this.wrapper.remove();
-};
-
-FlexPoint.prototype.drag = function() {
-    if (!this.wrapper) return this;
-
-    var point = this,
-        connection = this.connection,
-        move = function(dx, dy) {
-            this.attr({ x: this.ox + dx, y: this.oy + dy });
-            var box = this.getABox();
-            point.x = box.center.x;
-            point.y = box.center.y;
-            connection.render();
-        },
-        start = function() {
-            this.o();
-            point.state = 'dragging';
-            this.attr('cursor', 'move');
-        },
-        end = function() {
-            delete point.state;
-            connection.deselect();
-        };
-
-    this.wrapper.drag(move, start, end);
-};
 
 //
 // Helpers
@@ -382,22 +436,4 @@ function path(start, end, vertices, smooth) {
 
     return paths;
 }
-
-// Calculates angle for arrows
-
-function theta(p1, p2) {
-    var y = -(p2.y - p1.y), // invert the y-axis
-        x = p2.x - p1.x,
-        rad = Math.atan2(y, x);
-
-    if (rad < 0) { // correction for III. and IV. quadrant
-        rad = 2 * Math.PI + rad;
-    }
-
-    return {
-        degrees: 180 * rad / Math.PI,
-            radians: rad
-    };
-}
-
 
