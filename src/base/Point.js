@@ -9,17 +9,39 @@
  *
  */
 
-var Point = function Point( x, y ) {
-    var xy;
-    if (y === undefined){
-        // from string
-        xy = x.split(x.indexOf("@") === -1 ? " " : "@");
-        this.x = parseInt(xy[0], 10);
-        this.y = parseInt(xy[1], 10);
+var Point = Ds.Point = function Point(x, y) {
+    if (!y && _.isObject(x)) {
+        this.x = x.x;
+        this.y = x.y;
     } else {
         this.x = x;
         this.y = y;
     }
+};
+
+// Calculates angle for arrows
+
+Point.prototype.theta = function(point) {
+    return Point.theta(this, point);
+};
+
+Point.prototype.equals = function(point) {
+    return this.x === point.x && this.y === point.y;
+};
+
+Point.theta = function(p1, p2) {
+    var y = -(p2.y - p1.y), // invert the y-axis
+        x = p2.x - p1.x,
+        rad = Math.atan2(y, x);
+
+    if (rad < 0) { // correction for III. and IV. quadrant
+        rad = 2 * Math.PI + rad;
+    }
+
+    return {
+        degrees: 180 * rad / Math.PI,
+        radians: rad
+    };
 };
 
 /**
@@ -30,7 +52,7 @@ var Point = function Point( x, y ) {
  * @api public
  */
 
-Point.get = function(paper, e) {
+Point.get = function(diagram, e) {
     // IE:
     if (window.event && window.event.contentOverflow !== undefined) {
         return new Point(window.event.x, window.event.y);
@@ -41,30 +63,20 @@ Point.get = function(paper, e) {
         return new Point(e.offsetX, e.offsetY);
     }
 
-    // Firefox:
-    // get position relative to the whole document
-    // note that it also counts on scrolling (as opposed to clientX/Y).
+    // Firefox, Opera:
+    var paper = diagram.paper ? diagram.paper() : diagram;
     var pageX = e.pageX;
     var pageY = e.pageY;
-
-    // SVG's element parent node is world
     var el = paper.canvas.parentNode;
-
-    // get position of the paper element relative to its offsetParent
-    var offsetLeft = el ? el.offsetLeft : 0;
-    var offsetTop = el ? el.offsetTop : 0;
-    var offsetParent = el ? el.offsetParent : 0;
-
-    var offsetX = pageX - offsetLeft;
-    var offsetY = pageY - offsetTop;
-
-    // climb up positioned elements to sum up their offsets
-    while (offsetParent) {
-        offsetX += offsetParent.offsetLeft;
-        offsetY += offsetParent.offsetTop;
-        offsetParent = offsetParent.offsetParent;
+    var x = 0, y = 0;
+    while(el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
+        x += el.offsetLeft - el.scrollLeft;
+        y += el.offsetTop - el.scrollTop;
+        el = el.offsetParent;
     }
+    x = e.pageX - x;
+    y = e.pageY - y;
 
-    return new Point(offsetX, offsetY);
+    return new Point(x, y);
 };
 
