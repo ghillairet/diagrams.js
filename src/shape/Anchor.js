@@ -33,10 +33,18 @@ var Anchor = Ds.Anchor = Ds.DiagramElement.extend( /** @lends Anchor.prototype *
             this.wrapper.attr({ cursor: this.cursor });
         }
 
-        this.wrapper.box = this.box.wrapper;
+        this.wrapper.box = this.box;
         this.wrapper.anchor = this;
 
+        if (this.box.resizable) {
+            this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
+        }
+
         return this;
+    },
+
+    hide: function() {
+        if (this.wrapper) this.wrapper.hide();
     },
 
     /**
@@ -59,60 +67,30 @@ var Anchor = Ds.Anchor = Ds.DiagramElement.extend( /** @lends Anchor.prototype *
 });
 
 Anchor.start = function() {
-    this.o();
-    this.box.o();
-
     var current = this.anchor;
-    var control = this.box.controller;
+    var control = this.box;
 
+    current.active = true;
+    this.o();
+    this.box.figure.wrapper.o();
     control.startResize();
-
-    if (control.boundBox)
-        control.boundBox.render();
-
-    if (control.shadow)
-        control.shadowWrapper.remove();
-
-    _.each(control.selectionAnchors, function( anchor ) {
-        if (anchor !== current) {
-            anchor.remove();
-        } else {
-            anchor.hide();
-        }
-    });
 };
 
 Anchor.move = function( dx, dy, mx, my, eve ) {
-    var control = this.box.controller,
-        direction = this.anchor.direction,
-        min, limits, r;
+    var control = this.box,
+        direction = this.anchor.direction;
 
     this.attr( { x: this.ox + dx, y: this.oy + dy } );
-
-    min = control.minimumSize();
-    limits = control.parent ? control.parent.bounds() : control.paper;
-    r = control.wrapper.rdxy(dx, dy, direction, min, limits);
-    control.set(r);
-
-    if (control.boundBox)
-        control.boundBox.render();
-
-    control.renderEdges();
+    control.resize(dx, dy, direction);
 };
 
 Anchor.end = function() {
-    var control = this.box.controller;
+    var current = this.anchor;
+    var control = this.box;
 
+    current.active = false;
     control.endResize();
-
-    if (control.shadow)
-        control.createShadow();
-
-    if (control.boundBox)
-        control.boundBox.remove();
-
-    if (this.anchor)
-        this.anchor.box.select();
+    current.box.select();
 };
 
 /**
@@ -122,19 +100,14 @@ Anchor.end = function() {
  *
  */
 
-var NorthWestAnchor = Anchor.extend({
+Ds.NorthWestAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.x - 3;
         this.y = bbox.y - 3;
         this.cursor = 'nw-resize';
         this.direction = 'nw';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -146,19 +119,14 @@ var NorthWestAnchor = Anchor.extend({
  *
  */
 
-var SouthWestAnchor = Anchor.extend({
+Ds.SouthWestAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xLeft - 3;
         this.y = bbox.yBottom - 3;
         this.cursor = 'sw-resize';
         this.direction = 'sw';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -170,19 +138,14 @@ var SouthWestAnchor = Anchor.extend({
  *
  */
 
-var NorthEastAnchor = Anchor.extend({
+Ds.NorthEastAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xRight - 3;
         this.y = bbox.y - 3;
         this.cursor = 'ne-resize';
         this.direction = 'ne';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -194,19 +157,14 @@ var NorthEastAnchor = Anchor.extend({
  *
  */
 
-var SouthEastAnchor = Anchor.extend({
+Ds.SouthEastAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xRight - 3;
         this.y = bbox.yBottom - 3;
         this.cursor = 'se-resize';
         this.direction = 'se';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -218,19 +176,14 @@ var SouthEastAnchor = Anchor.extend({
  *
  */
 
-var NorthAnchor = Anchor.extend({
+Ds.NorthAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xCenter - 3;
         this.y = bbox.y - 3;
         this.cursor = 'n-resize';
         this.direction = 'n';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -242,19 +195,14 @@ var NorthAnchor = Anchor.extend({
  *
  */
 
-var SouthAnchor = Anchor.extend({
+Ds.SouthAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xCenter - 3;
         this.y = bbox.yBottom - 3;
         this.cursor = 's-resize';
         this.direction = 's';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -266,19 +214,14 @@ var SouthAnchor = Anchor.extend({
  *
  */
 
-var WestAnchor = Anchor.extend({
+Ds.WestAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.x - 3;
         this.y = bbox.yMiddle - 3;
         this.cursor = 'w-resize';
         this.direction = 'w';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });
@@ -290,19 +233,14 @@ var WestAnchor = Anchor.extend({
  *
  */
 
-var EastAnchor = Anchor.extend({
+Ds.EastAnchor = Anchor.extend({
 
     initialize: function( properties ) {
-        var bbox = properties.box.wrapper.getABox();
+        var bbox = properties.box.figure.bounds();
         this.x = bbox.xRight - 3;
         this.y = bbox.yMiddle - 3;
         this.cursor = 'e-resize';
         this.direction = 'e';
-    },
-
-    resizable: function() {
-        this.wrapper.drag(Anchor.move, Anchor.start, Anchor.end);
-        return this;
     }
 
 });

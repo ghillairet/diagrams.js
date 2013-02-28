@@ -11,34 +11,39 @@ var Layout = function(shape, attributes) {
 
 Layout.extend = extend;
 
+Layout.layouts = function() {
+    return {
+        'xy': XYLayout,
+        'flow': FlowLayout,
+        'grid': GridLayout,
+        'border': BorderLayout
+//        'flex': FlexGridLayout
+    };
+};
+
+Layout.create = function(shape, attributes) {
+    var options = shape.layout || attributes.layout,
+        type = options ? options.type : null,
+        layout, fn;
+
+    if (_.has(Layout.layouts(), type)) {
+        fn = Layout.layouts()[type];
+        layout = new fn(shape, options);
+    }
+
+    return layout;
+};
+
 Layout.prototype = {
 
     /**
      * Executes the layout algorithm
      */
 
-    layout: function() {}
+    layout: function() {},
+    minimumSize: function() {},
+    maximumSize: function() {},
+    preferredSize: function() {}
+
 };
-
-function createLayout(shape) {
-    var options = shape.layout,
-        type = options ? options.type : null;
-
-    return (function() {
-        switch (type) {
-            case 'xy':
-                return new XYLayout(shape, options);
-            case 'flow':
-                return new FlowLayout(shape, options);
-            case 'grid':
-                return new GridLayout(shape, options);
-            case 'flex':
-                return new FlexGridLayout(shape, options);
-            case 'border':
-                return new BorderLayout(shape, options);
-            default:
-                return null;
-        }
-    })();
-}
 

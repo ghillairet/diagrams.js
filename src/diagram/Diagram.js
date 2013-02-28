@@ -45,12 +45,12 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
     constructor: function(attributes) {
         if (!attributes) attributes = {};
-
         Ds.Element.apply(this, [attributes]);
 
         this._selection = null;
         this._currentSource = null;
         this._currentEdge = null;
+        this._handlers = [];
 
         this.set('edges', []);
 
@@ -118,15 +118,16 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         var canvas = paper.canvas;
         var x = canvas.clientLeft;
         var y = canvas.clientTop;
-        var width = canvas.clientWidth;
-        var height = canvas.clientHeight;
+        var width = canvas.width.baseVal.value;
+        var height = canvas.height.baseVal.value;
 
+        if (this.wrapper) this.wrapper.remove();
         // creates wrapper that will receive events
         this.wrapper = this.paper().rect(x, y, width, height, 0).attr({
             fill: 'white', opacity: 0, stroke: 'none'
         });
 
-        this.setEvents();
+        this.bindEvents();
         _.each(this.get('children'), function(child) { child.render(); });
         _.each(this.get('edges'), function(edge) { edge.render(); });
 
@@ -136,15 +137,42 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         return this;
     },
 
+    _events: [
+        'click', 'dblclick',
+        'mouseout', 'mouseup',
+        'mouseover', 'mousedown',
+        'mousemove'
+    ],
+
     /**
      * @private
      */
 
-    setEvents: function() {
-        if (!this.wrapper) return;
+    bindEvents: function() {
+        var diagram = this;
+        var wrapper = this.wrapper;
+        var createHandler = function(eve) {
+            return {
+                eve: eve,
+                handler: function(e) { diagram.trigger(eve, e); }
+            };
+        };
+        var bind = function(call) { wrapper[call.eve](call.handler); };
 
-        var me = this;
-        this.wrapper.click(function(e) { me.trigger('click'); });
+        this._handlers = _.map(this._events, createHandler);
+        _.each(this._handlers, bind);
+    },
+
+    /**
+     * @private
+     */
+
+    unBindEvents: function() {
+        var wrapper = this.wrapper;
+        var unbind = function(call) { wrapper['un' + call.eve](call.handler); };
+
+        _.each(this._handlers, unbind);
+        this._handlers.length = 0;
     },
 
     /**
@@ -221,6 +249,27 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         });
 
         return shape;
+    },
+
+    getShapesByPoint: function(point) {
+        var args = arguments;
+
+        if (!point)
+            return null;
+        if (args.length === 2)
+            point = { x: args[0], y: args[1] };
+        if (isNaN(point.x) || isNaN(point.y))
+            return [];
+
+        var paper = this.paper();
+        var elements = paper.getElementsByPoint(point.x, point.y);
+        var returnShape = function(set, el) {
+            if (el.control && el.control.shape)
+                set.push(el.control.shape);
+            return set;
+        };
+
+        return _.reduce(elements, returnShape, []);
     },
 
     /**
@@ -311,7 +360,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
         if (this.currentEdge) {
             if (this.currentSource) {
-                connection = this.createConnection( this.currentEdge, {
+                connection = this.createConnection(this.currentEdge, {
                     source: this.currentSource,
                     target: node
                 });
@@ -340,27 +389,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
             this.repeatInputClick = true;
         }
     },
-/*
-    handleEvent: function(e) {
-        if (e && e.type) this.trigger(e.type, e);
 
-        var position = Point.get(this.paper(), e);
-        var el = this.paper().getElementsByPoint(position.x, position.y);
-
-        if (el.length === 0 && this._selection) {
-            this._selection.deselect();
-            delete this._selection;
-        }
-
-        if (this.inputText) {
-            this.handleTextInput();
-        }
-
-        if (el.length === 0 && this.currentEdge) {
-            this.currentEdge = null;
-        }
-    },
-*/
     deselect: function() {
         if (this._selection && typeof this._selection.deselect === 'function') {
             this._selection.deselect();
@@ -369,7 +398,11 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     setSelection: function(element) {
+        if (this._selection) {
+            this._selection.deselect();
+        }
         this._selection = element;
+        this.trigger('select', element);
     },
 
     getSelection: function() {
@@ -382,15 +415,6 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
     toJSON: function() {
 
-    },
-
-    getElementByPoint: function(point) {
-        var p = this.paper();
-        var el = p.getElementByPoint(point.x, point.y);
-        if (el && el.controller) {
-            return el.controller;
-        }
-        return null;
     },
 
     // Private methods

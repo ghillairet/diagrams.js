@@ -9,51 +9,22 @@
 var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramElement.prototype */ {
 
     constructor: function(attributes) {
+        if (!attributes) attributes = {};
         Ds.Element.apply(this, [attributes]);
 
         this.parent = attributes.parent || undefined;
         this.diagram = this.parent ? this.parent.diagram : attributes.diagram;
 
         this.set('id', attributes.id || _.uniqueId());
-
-        this._initAttributes(attributes);
+        this.setFigure(attributes.figure || this.figure);
+        this.set(attributes);
     },
 
-    /**
-     * @private
-     */
-
-    _initAttributes: function(attributes) {
-        var key;
-        if (!this.figure && attributes.figure) {
-            for (key in attributes.figure) {
-                if (!_.contains(escapes, key)) {
-                    this.attributes[key] = _.clone(attributes.figure[key]);
-                }
-            }
-            this.figure = _.clone(attributes.figure);
-        }
-
-        if (this.figure) {
-            for (key in this.figure) {
-                if (!_.contains(escapes, key)) {
-                    this.attributes[key] = _.clone(this.figure[key]);
-                }
-            }
-        }
-
-        for (var k in attributes) {
-            if (_.has(raphaelAttributes, k))  {
-                this.attributes[k] = attributes[k];
-            }
-        }
-
-        if (this.has('width')) {
-            this.set('min-width', this.get('width'));
-        }
-        if (this.has('height')) {
-            this.set('min-height', this.get('height'));
-        }
+    setFigure: function(figure) {
+        if (figure instanceof Figure)
+            this.figure = figure;
+        else
+            this.figure = Figure.create(this, figure);
     },
 
     /**
@@ -69,7 +40,7 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      */
 
     remove: function() {
-        if (this.wrapper) this.wrapper.remove();
+        if (this.figure) this.figure.remove();
         return this;
     },
 
@@ -87,6 +58,13 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
         return this.diagram.paper();
     },
 
+    get: function(key) {
+        if (this.figure && _.has(this.figure.defaults, key)) {
+            return this.figure.get(key);
+        }
+        return Element.prototype.get.apply(this, arguments);
+    },
+
     /**
      * Setter method
      *
@@ -97,22 +75,16 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
     set: function(key, value) {
         var attrs;
 
-        if (_.isObject(key)) {
+        if (_.isObject(key))
             attrs = key;
-        } else {
-            (attrs = {})[key] = value;
-        }
-
-        if (this.wrapper) {
-            if (this.wrapper.type === 'circle') {
-                if (attrs.x) attrs.cx = attrs.x;
-                if (attrs.y) attrs.cy = attrs.y;
-            }
-            this.wrapper.attr(attrs);
-        }
+        else (attrs = {})[key] = value;
 
         for (var attr in attrs) {
-            this.attributes[attr] = attrs[attr];
+            if (this.figure && _.has(this.figure.defaults || {}, attr)) {
+                this.figure.set(attr, attrs[attr]);
+            } else {
+                this.attributes[attr] = attrs[attr];
+            }
         }
 
         return this;
@@ -131,7 +103,7 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      */
 
     show: function() {
-        if (this.wrapper) this.wrapper.show();
+        if (this.figure) this.figure.show();
         return this;
     },
 
@@ -140,7 +112,7 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      */
 
     hide: function() {
-        if (this.wrapper) this.wrapper.hide();
+        if (this.figure) this.figure.hide();
         return this;
     },
 
@@ -149,36 +121,22 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      */
 
     toFront: function() {
-        if (this.wrapper) this.wrapper.toFront();
+        if (this.figure) this.figure.toFront();
+        _.each(this.children, function(child) { child.toFront(); });
+        return this;
+    },
+
+    /**
+     * Bring the DiagramElement behind other elements
+     */
+
+    toBack: function() {
+        _.each(this.children, function(child) { child.toBack(); });
+        if (this.figure) this.figure.toBack();
         return this;
     }
 
 });
-
-function createFigure(shape) {
-    var paper = shape.paper(),
-        type = shape.get('type'),
-        x = 0,
-        y = 0,
-        wrapper;
-
-    switch(type) {
-        case 'rect':
-        case 'circle':
-        case 'ellipse':
-            wrapper = paper[type](x, y);
-            break;
-        case 'path':
-            wrapper = paper.path(shape.get('path'));
-            break;
-        default:
-            wrapper = null;
-    }
-
-    if (wrapper) wrapper.controller = shape;
-
-    return wrapper;
-}
 
 function isImage(shape) {
     return shape.figure && shape.figure.type === 'image';

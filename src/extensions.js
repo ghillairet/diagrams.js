@@ -35,6 +35,7 @@ Raphael.el.y = function () {
     }
 };
 
+/**
 var resizeEllipse = function(dx, dy, direction, min, limits) {
     if (_.include(['ne', 'nw', 'n'], direction)) {
         dy = -dy;
@@ -106,6 +107,7 @@ Raphael.el.rdxy = function(dx, dy, direction, min, limits) {
         return {};
     }
 };
+**/
 
 Raphael.el.o = function () {
     var attr = this.attr();
@@ -186,7 +188,7 @@ Raphael.el.getABox = function() {
 };
 
 // Polyline support.
-Raphael.fn.polyline = function(x,y) {
+Raphael.fn.polyline = function(x, y) {
     var poly = ['M', x, y, 'L'];
     for (var i = 2; i < arguments.length; i++) {
         poly.push(arguments[i]);

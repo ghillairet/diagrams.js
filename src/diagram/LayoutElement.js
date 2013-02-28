@@ -12,6 +12,7 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
     constructor: function(attributes) {
         Ds.DiagramElement.apply(this, [attributes]);
 
+        if (attributes.gridData) this.gridData = attributes.gridData;
         this.initialize(attributes);
     },
 
@@ -28,16 +29,14 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
      */
 
     bounds: function() {
-        if (this.wrapper) {
-            return this.wrapper.getABox();
-        } else {
-            var x = this.get('x'),
-                y = this.get('y'),
-                w = this.get('width'),
-                h = this.get('height');
-
-            return { x: x, y: y, width: w, height: h };
-        }
+        if (this.figure)
+            return this.figure.bounds();
+        else return {
+            x: this.get('x'),
+            y: this.get('y'),
+            width: this.get('width'),
+            height: this.get('height')
+        };
     },
 
     /**
@@ -50,6 +49,12 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
      */
 
     preferredSize: function() {
+        if (this.layout) {
+            return this.layout.preferredSize();
+        } else {
+            return this.figure.preferredSize();
+        }
+        /*
         var min = this.minimumSize(),
             w = this.get('width'),
             h = this.get('height');
@@ -68,6 +73,7 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
         if (min.height > h) h = min.height;
 
         return { width: w, height: h };
+        */
     },
 
     /**
@@ -80,20 +86,10 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
      */
 
     minimumSize: function() {
-        var w = this.has('min-width') ? this.get('min-width') : this.get('width'),
-            h = this.has('min-height') ? this.get('min-height') : this.get('height'),
-            pms = this.parent ? this.parent.minimumSize() : null;
-
-        if (!w && pms) {
-            w = pms.width;
-            this.set('min-width', w);
-        }
-        if (!h && pms) {
-            h = pms.height;
-            this.set('min-height', h);
-        }
-
-        return { width: w, height: h };
+        if (this.layout)
+            return this.layout.minimumSize();
+        else
+            return this.figure.minimumSize();
     },
 
     /**
@@ -106,7 +102,10 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
      */
 
     maximumSize: function() {
-
+        if (this.layout)
+            return this.layout.maximumSize();
+        else
+            return this.figure.maximumSize();
     },
 
     /**
@@ -116,8 +115,7 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
 
     doLayout: function() {
         if (!this.layout) return;
-
-        this.set(this.layout.size());
+        //this.set(this.layout.preferredSize());
         this.layout.layout();
     }
 

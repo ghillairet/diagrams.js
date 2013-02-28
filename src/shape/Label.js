@@ -1,27 +1,3 @@
-
-
-var positions = [
-    'top-left', 'top-right', 'top-center',
-    'bottom-left', 'bottom-right', 'bottom-center',
-    'center-left', 'center-right', 'center'
-];
-
-function getPosition(label, properties)  {
-    var position = label.figure ? label.figure.position || 'center' : 'center';
-
-    if (properties && properties.position) {
-        position = properties.position;
-
-        if (position.x && position.y) {
-            return position;
-        } else if (_.include(positions, position)) {
-            return position;
-        }
-    }
-
-    return position; // default
-}
-
 /**
  * @name Label
  * @class Diagram Element that can display a text with an associated icon.
@@ -34,18 +10,17 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
     constructor: function(attributes) {
         Ds.LayoutElement.apply(this, [attributes]);
 
-        this.position = getPosition(this, attributes);
         this.resizable = attributes.resizable || false;
-        this.draggable = attributes.draggable || false;
+        if (_.isBoolean(attributes.draggable))
+            this.draggable = attributes.draggable;
         this.editable = attributes.editable || true;
 
         this.xOffset = 5;
         this.yOffset = 5;
 
         var image = this.figure ? this.figure.image : attributes.figure.image;
-        if (image) {
-            this.setImage(image);
-        }
+        if (image) this.setImage(image);
+
         this.initialize(attributes);
     },
 
@@ -58,102 +33,21 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
     },
 
     render: function() {
-        if (this.wrapper) this.remove();
-
-        var paper = this.paper();
-//            bBox = this.parent.wrapper.getABox();
-
-        this.wrapper = paper.rect().attr({ fill: 'none', stroke: 'none' });
-        if (this.attributes.fill) {
-            this.wrapper.attr({ fill: this.attributes.fill });
-        }
-        this.label = paper.text(0, 0, this.get('text')).attr({
-            fill: 'black',
-            'font-size': 12
-        });
-
-        if (this.attributes['font-size']) {
-            this.label.attr('font-size', this.attributes['font-size']);
-        }
-
-        this.wrapper.toFront();
-        this.label.toFront();
-        this.wrapper.controller = this;
-        console.log('render', this.get('x'));
-        this.doLayout();
-
-//        var size = this.preferredSize();
-//        this.wrapper.attr({ width: size.width, height: size.height });
+        this.figure.render();
+        this.figure.toFront();
 
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
 
+//        console.log(this.draggable);
+//        if (this.draggable) this.asDraggable();
+
         return this;
-    },
-
-    center: function() {
-        var box = this.wrapper.getABox(),
-            label = this.label,
-            lbox = label.getABox();
-console.log(this.position, box.xCenter);
-        switch (this.position) {
-            case 'center':
-                label.attr('x', box.xCenter);
-                label.attr('y', box.yMiddle);
-                break;
-            case 'center-left':
-                label.attr('x', box.x + (lbox.width / 2) + this.xOffset);
-                label.attr('y', box.yMiddle);
-                if (this.image) {
-                    var x = this.get('x');
-                    this.set({ x: x + this.image.get('width') });
-                }
-                break;
-            case 'center-right':
-                label.attr('x', box.xRight - this.xOffset - (lbox.width / 2));
-                label.attr('y', box.yMiddle);
-                break;
-            case 'top-center':
-                label.attr('x', box.xCenter);
-                label.attr('y', box.y + (lbox.height / 2) + this.yOffset);
-                break;
-            case 'top-left':
-                label.attr('x', box.x + (lbox.width / 2) + this.xOffset);
-                label.attr('y', box.y + (lbox.height / 2) + this.yOffset);
-                break;
-            case 'top-right':
-                label.attr('x', box.xRight - this.xOffset - (box.width / 2));
-                label.attr('y', box.y + (box.height / 2) + this.yOffset);
-                break;
-            case 'bottom-center':
-                label.attr('x', box.xCenter);
-                label.attr('y', box.yBottom - (box.height / 2) - this.yOffset);
-                break;
-            case 'bottom-left':
-                label.attr('x', box.x + this.xOffset + (box.width / 2));
-                label.attr('y', box.yBottom - (box.height / 2) - this.yOffset);
-                break;
-            case 'bottom-right':
-                label.attr('x', box.x - this.xOffset - (box.width / 2));
-                label.attr('y', box.yBottom - (box.height / 2) - this.yOffset);
-                break;
-            default:
-                break;
-        }
-
-        if (this.image) {
-            this.image.set({ x: lbox.x - this.image.get('width') - 2 });
-            this.image.set({ y: lbox.y });
-        }
     },
 
     setText: function( text, silent ) {
         this.set('text', text);
-
-        if (this.wrapper && this.label) {
-            this.label.attr('text', text);
-            this.doLayout();
-        }
+        this.doLayout();
 
         if (!silent) {
             this.trigger('change:text', this);
@@ -168,33 +62,29 @@ console.log(this.position, box.xCenter);
         if (this.image) {
             this.image.remove();
         }
-        if (this.label) {
-            this.label.remove();
-        }
-        if (this.wrapper) {
-            this.wrapper.remove();
+        if (this.figure) {
+            this.figure.remove();
         }
     },
 
     doLayout: function() {
-        this.center();
+        if (this.figure) this.figure.layoutText();
+    },
+
+    toFront: function() {
+        if (this.figure) this.figure.toFront();
+        if (this.image) this.image.toFront();
     },
 
     preferredSize: function() {
-//        console.log('preferredSize', this.label.getABox());
-        if (this.label) {
-            return this.label.getABox();
-        } else {
-            return { width: this.get('width'), height: this.get('height') };
-        }
+        return {
+            width: this.get('width'),
+            height: this.get('height')
+        };
     },
 
     minimumSize: function() {
-        if (this.label) {
-            return this.label.getABox();
-        } else {
-            return { width: this.get('width'), height: this.get('height') };
-        }
+        return this.figure.minimumSize();
     },
 
     asEditable: function() {
@@ -230,7 +120,7 @@ console.log(this.position, box.xCenter);
             }
         };
 
-        node.label.dblclick(function(event) {
+        node.label.on('dblclick', function(event) {
             var ml = node.diagram.modifiedLabel;
             if (ml && ml !== node) {
                 remove(node.diagram.inputText);

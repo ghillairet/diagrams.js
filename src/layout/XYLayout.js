@@ -18,13 +18,14 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
 
     layout: function() {
         var shape = this.shape,
-            bounds = shape.wrapper.getABox(),
+            bounds = shape.bounds(),
             elements = shape.children,
             l = elements.length, i = 0, el;
 
+        console.log('layout', this.shape, bounds);
         for (; i < l ; i++) {
             el = elements[i];
-            el.wrapper.translate(bounds.x, bounds.y);
+            el.figure.translate(bounds.x, bounds.y);
             el.doLayout();
         }
     },
@@ -33,8 +34,16 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
      * Returns the size of the element associated with the layout
      */
 
-    size: function() {
-        return this.shape.bounds();
+    minimumSize: function() {
+//        return this.shape.figure.bounds();
+    },
+
+    preferredSize: function() {
+//        return this.shape.figure.bounds();
+    },
+
+    maximumSize: function() {
+//        return this.shape.figure.bounds();
     }
 
 });

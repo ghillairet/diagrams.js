@@ -15,8 +15,6 @@
  */
 
 var Element = Ds.Element = function (attributes) {
-    if (!attributes) attributes = {};
-
     this.attributes = {};
     this.attributes.children = [];
 };
@@ -111,11 +109,9 @@ Element.prototype = {
     set: function( key, value ) {
         var attrs;
 
-        if (_.isObject(key)) {
+        if (_.isObject(key))
             attrs = key;
-        } else {
-            (attrs = {})[key] = value;
-        }
+        else (attrs = {})[key] = value;
 
         for (var attr in attrs) {
             this.attributes[attr] = attrs[attr];

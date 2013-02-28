@@ -65,6 +65,7 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
     showBoundBox: true,
 
     constructor: function(attributes) {
+        if (!attributes) attributes = {};
         Ds.DiagramElement.apply(this, [attributes]);
 
         this.ins = [];
@@ -83,18 +84,18 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
             this.children = attributes.children;
         }
 
-        if (this.diagram && !this.parent) {
-            this.diagram.get('children').push(this);
-            this.diagram.trigger('add:children', this);
-        }
-
         this.setUpChildren();
-        this.setUpLayout();
+        this.setUpLayout(attributes);
         this.setUpStyles(attributes);
         this.setUpToolBox();
         this.setUpBoundBox();
 
         this.initialize.apply(this, arguments);
+
+        if (this.diagram && !this.parent) {
+            this.diagram.get('children').push(this);
+            this.diagram.trigger('add:children', this);
+        }
     },
 
     /**
@@ -132,16 +133,12 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     render: function() {
-        if (this.wrapper) this.remove(false);
-
-        this.wrapper = createFigure(this);
-
-        if (!this.wrapper) throw new Error('Cannot render this shape: ', this);
-
-        this.set(this.attributes);
+        if (this.layout) {
+            this.set(this.layout.preferredSize());
+        }
+        this.figure.render();
         this.renderContent();
 
-        this.bindEvents();
         this.on('click', this.select);
         this.on('click', this.showTool);
         this.on('mousedown', this.handleClick);
@@ -156,57 +153,24 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      * @private
      */
 
-    bindEvents: function() {
-        if (!this.wrapper) return;
-
-        var me = this;
-        this.wrapper.click(function(e) { me.trigger('click', e); });
-        this.wrapper.mouseover(function(e) { me.trigger('mouseover', e); });
-        this.wrapper.mouseout(function(e) { me.trigger('mouseout', e); });
-        this.wrapper.mouseup(function(e) { me.trigger('mouseup', e); });
-        this.wrapper.mousedown(function(e) { me.trigger('mousedown', e); });
+    handleClick: function(e) {
+//        this.dragConnection(e, this.diagram.currentEdge);
     },
 
-    /**
-     * @private
-     */
+    dragConnection: function(e, connectionType) {
+        if (e) e.stopPropagation();
+        if (!connectionType || typeof connectionType !== 'function') return;
 
-    handleClick: function(e) {
-        var diagram = this.diagram,
-            edge = diagram.currentEdge,
-            shape = this;
-
-        if (!edge) return;
-
-        shape.connecting = true;
-        var start = Point.get(diagram.paper(), e);
-
-        var onup = function(e) {
-            if (!shape.line || !shape.connecting) return;
-
-            var targetShape = diagram.getElementByPoint(shape.line.end);
-            if (targetShape) {
-                diagram.createConnection(edge, { source: shape, target: targetShape }).render();
-                delete diagram.currentEdge;
-            }
-            if (shape.line) {
-                shape.line.remove();
-                delete shape.line;
-            }
-            shape.connecting = false;
-            document.removeEventListener('mousemove', onmove);
-            document.removeEventListener('mousemove', onup);
+        var me = this;
+        me.connecting = true;
+        var connection = new connectionType({ diagram: me.diagram });
+        connection.connectByDragging(me, e);
+        connection.render();
+        var end = function() {
+            me.connecting = false;
+            connection.off('connect', end);
         };
-
-        var onmove = function(e) {
-            if (!shape.connecting) return;
-            var end = Point.get(diagram.paper(), e);
-            if (shape.line) shape.line.remove();
-            shape.line = new Line(diagram.paper(), start, end);
-            document.addEventListener('mouseup', onup);
-        };
-
-        document.addEventListener('mousemove', onmove);
+        connection.on('connect', end);
     },
 
     /**
@@ -239,11 +203,7 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
     remove: function(diagram) {
         this.deselect();
 
-        if (this.wrapper) {
-            this.wrapper.remove();
-            delete this.wrapper;
-        }
-
+        this.figure.remove();
         _.each(this.children, function(c) { c.remove(); });
         _.each(this.ins, function(e) { e.remove(diagram); });
         _.each(this.outs, function(e) { e.remove(diagram); });
@@ -289,6 +249,19 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         return this;
     },
 
+
+    canAdd: function(fn) {
+        if (typeof fn !== 'function') return false;
+        if (!this.accepts) return false;
+
+        var dummy = new fn({});
+        return _.some(this.accepts, function(a) { return dummy instanceof a; });
+    },
+
+    canConnect: function(connection) {
+        return true;
+    },
+
     /**
      * Add a child Shape
      *
@@ -317,8 +290,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      * @private
      */
 
-    setUpLayout: function() {
-        this.layout = createLayout(this);
+    setUpLayout: function(attributes) {
+        this.layout = Layout.create(this, attributes);
     },
 
     /**
@@ -336,12 +309,12 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
                 shape = new Label(child);
             } else if (isImage(child)) {
                 shape = new Ds.Image(child);
-            } else if (isCompartment(child)) {
-                shape = new Compartment(child);
-            } else {
+            } else if (typeof child === 'function') {
+                shape = new child({ parent: this });
+            } else if (typeof child === 'object') {
                 shape = new Shape(child);
             }
-            this.add(shape);
+            if (shape) this.add(shape);
         }, this);
     },
 
@@ -350,7 +323,7 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     removeContent: function() {
-        _.each(this.children, function(c) { c.remove(); });
+        _(this.children).each(function(c) { c.remove(); });
     },
 
     /**
@@ -358,8 +331,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderContent: function() {
-        _.each(this.children, function(c) { c.render(); });
-        this.doLayout();
+        _(this.children).each(function(c) { c.render(); });
+        if (!this.parent) { this.doLayout(); }
     },
 
     /**
@@ -367,8 +340,14 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderEdges: function() {
-        _.each(this.ins, function(i) { i.render(); });
-        _.each(this.outs, function(o) { o.render(); });
+        _(this.ins).each(function(i) { i.render(); });
+        _(this.outs).each(function(o) { o.render(); });
+    },
+
+
+    asDraggable: function() {
+        if (this.figure) this.figure.asDraggable();
+        return this;
     }
 
 });
@@ -385,11 +364,16 @@ Ds.Resizable = {
      */
 
     startResize: function() {
-        if (!this.wrapper) return;
-        if (this._tool) this.toolBox.remove();
-        this.wrapper.o();
+        if (this.toolBox) this.toolBox.remove();
+        if (this.shadow) this.shadowWrapper.remove();
+
+        _.each(this.selectionAnchors, function( anchor ) {
+            if (anchor.active) anchor.hide(); else anchor.remove();
+        });
         this.removeContent();
-        this.wrapper.attr(this.resizeStyle);
+
+        if (this.figure) this.figure.startResize(this.resizeStyle);
+
         this.trigger('start:resize');
     },
 
@@ -409,17 +393,10 @@ Ds.Resizable = {
      */
 
     resize: function(dx, dy, direction) {
-        var width, height;
         if (!this.resizable) return this;
-
-        this.deselect();
-        this.startResize();
-
-        width = this.wrapper.ow + dx;
-        height = this.wrapper.oh + dy;
-        this.set({ width: width, height: height });
-
-        this.endResize();
+        if (this.figure) this.figure.resize(dx, dy, direction);
+        if (this.boundBox) this.boundBox.render();
+        this.renderEdges();
 
         return this;
     },
@@ -429,123 +406,18 @@ Ds.Resizable = {
      */
 
     endResize: function() {
-        this.wrapper.reset();
+        if (this.figure) this.figure.endResize();
+
         this.renderEdges();
         this.renderContent();
+
+        if (this.shadow) this.createShadow();
+        if (this.boundBox) this.boundBox.remove();
+
         this.trigger('end:resize');
     }
 
 };
 
-/**
- * @name Draggable
- * @class
- */
-
-Ds.Draggable = {
-
-    asDraggable: function(options) {
-        if (this.wrapper) {
-            this.wrapper.attr({ cursor: 'move' });
-        }
-
-        this.wrapper.drag(this.move, this.startMove, this.endMove);
-
-        return this;
-    },
-
-    startMove: function() {
-        var control = this.wrapper ? this : this.controller;
-        if (!control) return;
-        if (control.connecting) return;
-
-        control.deselect();
-        control.removeContent();
-
-        var wrapper = control.wrapper;
-        // store previous attributes
-        var attrs = _.clone(wrapper.attrs);
-        var type = wrapper.type;
-
-        // stores current state
-        wrapper.o();
-        // sets move style
-        wrapper.attr(control.moveStyle);
-        wrapper.unmouseover(wrapper.mouseover);
-        wrapper.unmouseout(wrapper.mouseout);
-        control.trigger('start:move');
-    },
-
-    endMove: function() {
-        var control = this.wrapper ? this : this.controller;
-        if (!control) return;
-
-        control.renderContent();
-        var wrapper = control.wrapper;
-
-        wrapper.reset();
-        wrapper.mouseover(this.mouseover);
-        wrapper.mouseout(this.mouseout);
-
-        if (control.boundBox)
-            control.boundBox.remove();
-
-        control.trigger('end:move');
-    },
-
-    move: function(dx, dy, mx, my, eve) {
-        var control = this.wrapper ? this : this.controller;
-        if (!control) return;
-        if (control.connecting) return;
-
-        if (arguments.length === 2) {
-            var x = arguments[0];
-            var y = arguments[1];
-            this.startMove();
-            this.set({ x: x, y: y });
-            this.endMove();
-            return control;
-        }
-
-        control.set(control.calculatePosition(dx, dy));
-
-        if (control.boundBox)
-            control.boundBox.render();
-
-        control.renderEdges();
-
-        return control;
-    },
-
-    calculatePosition: function(dx, dy) {
-        var wrapper = this.wrapper;
-        var parent = this.parent;
-        var bounds = parent ? parent.bounds() : wrapper.paper;
-        var b = wrapper.getBBox();
-        var x = wrapper.ox + dx;
-        var y = wrapper.oy + dy;
-
-        var isCircle = function() {
-            return wrapper.is('circle') || wrapper.is('ellipse');
-        };
-
-        var r = isCircle() ? b.width / 2 : 0;
-
-        // calculates the min between the requested positions and
-        // the limits of the container
-
-        if (parent) {
-            x = Math.min(Math.max(bounds.x + r, x), (bounds.width - (isCircle() ? r : b.width)) + bounds.x);
-            y = Math.min(Math.max(bounds.y + r, y), (bounds.height - (isCircle() ? r : b.height)) + bounds.y);
-        } else {
-            x = Math.min(Math.max(r, x), bounds.width - (isCircle() ? r : b.width));
-            y = Math.min(Math.max(r, y), bounds.height - (isCircle() ? r : b.height));
-        }
-
-        return { x: x, y: y, cx: x, cy: y };
-    }
-
-};
-
-_.extend(Ds.Shape.prototype, Ds.Selectable, Ds.Resizable, Ds.Draggable, Ds.Events);
+_.extend(Ds.Shape.prototype, Ds.Selectable, Ds.Resizable, Ds.Events);
 

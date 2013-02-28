@@ -18,14 +18,11 @@
  *
  */
 
-var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
+var FlexGridLayout = GridLayout.extend(/** @lends FlexGrid.prototype */ {
 
     constructor: function(shape, attributes) {
         if (!attributes) attributes = {};
-        Layout.apply(this, [shape, attributes]);
-        this.columns = attributes.columns || 1;
-        this.rows = attributes.rows || 0;
-        this.vertical = attributes.vertical || false;
+        GridLayout.apply(this, [shape, attributes]);
         this.stretch = attributes.stretch || false;
     },
 
@@ -39,13 +36,13 @@ var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
         var i = 0, c = 0, r = 0,
             elements = this.shape.children,
             rows = this.rows,
-            columns = this.columns, // || elements.length,
+            columns = this.columns || elements.length,
             pd = this.shape.preferredSize(),
 //            sw = 1,//this.shape.bounds().width / pd.width,
 //            sh = 1,//this.shape.bounds().height / pd.height,
             bounds = this.shape.bounds(),
-            x = bounds.x,
-            y = bounds.y,
+            x = bounds.x + this.hgap,
+            y = bounds.y + this.vgap,
             d;
 
         if (rows > 0) {
@@ -67,10 +64,11 @@ var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
 //            d.height = sh * d.height;
 
             //if (w[c] < d.width)
-            if (this.stretch)
-                w[c] = pd.width; // stretch on x
-            else
+//            if (this.stretch)
+//                w[c] = pd.width; // stretch on x
+//            else
                 w[c] = d.width;
+            console.log(elements[i], c, d.width);
 
             var ch, lh;
             // if last stretch on y
@@ -87,14 +85,25 @@ var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
             for (r = 0, y = bounds.y; r < rows; r++) {
                 i = r * columns + c;
                 if (i < elements.length) {
+                    console.log(elements[i], w[c], h[r]);
                     elements[i].set({ x: x, y: y, width: w[c], height: h[r] });
-                    console.log(elements[i], x, y, w[c], h[r]);
                     elements[i].doLayout();
                 }
-                y += h[r];
+                y += h[r] + this.vgap;
             }
-            x += w[c];
+            x += w[c] + this.hgap;
         }
+    },
+
+    preferredSize: function() {
+    },
+
+    minimumSize: function() {
+
+    },
+
+    maximumSize: function() {
+
     },
 
     /**
@@ -125,6 +134,7 @@ var FlexGridLayout = Layout.extend(/** @lends FlexGrid.prototype */ {
             elSize = elements[i].minimumSize();
             if (w[c] < elSize.width) {
                 w[c] = elSize.width;
+                console.log('size', w[c]);
             }
             if (h[r] < elSize.height) {
                 h[r] = elSize.height;

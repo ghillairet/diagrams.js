@@ -201,8 +201,8 @@ PaletteGroup.prototype.render = function() {
                             node = new tool.shape(position);
                             if (node) {
                                 found.add(node);
-                                found.renderContent();
                                 found.doLayout();
+                                found.renderContent();
                                 me.palette.currentItem.trigger('created');
                             }
                         }

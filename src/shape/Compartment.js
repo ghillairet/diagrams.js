@@ -6,7 +6,6 @@ var Compartment = Ds.Compartment = Ds.Shape.extend({
 
     resizable: false,
     draggable: false,
-    layout: 'fixed', // horizontal, vertical
     spacing: 5,
 
     constructor: function(attributes) {
