@@ -53,6 +53,19 @@ var Circle = Ds.Circle = Ds.Figure.extend({
         return this;
     },
 
+    resize: function(dx, dy, direction) {
+        if (_.include(['ne', 'nw', 'n'], direction)) {
+            dy = -dy;
+        }
+
+        var min = this.minimumSize();
+        var sumr = this.wrapper.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
+        var r = isNatural(sumr) ? sumr : this.wrapper.or;
+        if (r < min.r) r = min.r;
+
+        this.set({ r: r });
+    },
+
     /**
      * @private
      */
@@ -89,6 +102,18 @@ var Circle = Ds.Circle = Ds.Figure.extend({
 
     minimumSize: function() {
         return { r: this.get('min-r') };
+    },
+
+     /**
+     * Moves the figure according to the given dx, dy.
+     */
+
+    translate: function(dx, dy) {
+        if (this.wrapper) {
+            this.wrapper.transform('t' + dx + ',' + dy);
+            this.set({ x: this.wrapper.attr('cx'), y: this.wrapper.attr('cy') });
+        }
+        return this;
     }
 
 }, {

@@ -4,8 +4,13 @@ var Figure = Ds.Figure = Ds.Element.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Element.apply(this, [attributes]);
-        this.shape = attributes.shape;
-        this.diagram = this.shape.diagram;
+
+        if (attributes.shape) {
+            this.shape = attributes.shape;
+        } else if (attributes.paper) {
+            this.paper = attributes.paper;
+        }
+
         this.eveHandlers = [];
     },
 
@@ -54,9 +59,9 @@ var Figure = Ds.Figure = Ds.Element.extend({
      * @private
      */
 
-    bindEvents: function() {
+    bindEvents: function(wrapper) {
         var shape = this.shape;
-        var wrapper = this.wrapper;
+        var _wrapper = wrapper || this.wrapper;
 
         this.eveHandlers = _.map(this.events, function(eve) {
             return { eve: eve, handler: function(e) {
@@ -65,7 +70,7 @@ var Figure = Ds.Figure = Ds.Element.extend({
         });
 
         _.each(this.eveHandlers, function(call) {
-            wrapper[call.eve](call.handler);
+            _wrapper[call.eve](call.handler);
         });
     },
 
@@ -73,10 +78,10 @@ var Figure = Ds.Figure = Ds.Element.extend({
      * @private
      */
 
-    unBindEvents: function() {
-        var wrapper = this.wrapper;
+    unBindEvents: function(wrapper) {
+        var _wrapper = wrapper || this.wrapper;
         _.each(this.eveHandlers, function(call) {
-            wrapper['un' + call.eve](call.handler);
+            _wrapper['un' + call.eve](call.handler);
         });
         this.eveHandlers.length = 0;
     },
@@ -89,8 +94,15 @@ var Figure = Ds.Figure = Ds.Element.extend({
         if (!this.diagram) {
             this.diagram = this.shape.diagram || this.shape.parent.diagram;
         }
-        return this.diagram.paper();
+
+        var renderer = this.diagram.paper();
+        if (!renderer)
+            throw new Error('Cannot render figure, renderer is not available.');
+
+        return renderer;
     },
+
+    // resize functions
 
     startResize: function(style) {
         if (this.wrapper) {
@@ -99,11 +111,7 @@ var Figure = Ds.Figure = Ds.Element.extend({
         }
     },
 
-    resize: function(dx, dy, direction) {
-        var width = this.wrapper.ow + dx;
-        var height = this.wrapper.oh + dy;
-        this.set({ width: width, height: height });
-    },
+    resize: function(dx, dy, direction) {},
 
     endResize: function() {
         if (this.wrapper) {
@@ -119,11 +127,13 @@ var Figure = Ds.Figure = Ds.Element.extend({
         }
     },
 
-    startMove: function() {
-        var control = this.control;
-        if (!control) return;
+    // move functions
 
-        var shape = control.shape;
+    startMove: function(style) {
+        var figure = this.control;
+        if (!figure) return;
+
+        var shape = figure.shape;
         if (shape.connecting) return;
         shape.deselect();
         shape.removeContent();
@@ -132,15 +142,15 @@ var Figure = Ds.Figure = Ds.Element.extend({
         // stores current state
         this.o();
         // sets move style
-        this.attr(control.moveStyle);
+        this.attr(shape.moveStyle);
         shape.trigger('start:move');
     },
 
     move: function(dx, dy, mx, my, eve) {
-        var control = this.control;
-        if (!control) return;
+        var figure = this.control || this;
+        if (!figure) return;
 
-        var shape = control.shape;
+        var shape = figure.shape;
         if (shape.connecting) return;
 
         /**
@@ -153,11 +163,28 @@ var Figure = Ds.Figure = Ds.Element.extend({
             return control;
         }
         **/
-
-        control.set(control.calculatePosition(dx, dy));
-        control.shape.renderEdges();
+        var position = figure.calculatePosition(dx, dy);
+        figure.set({ x: position.x, y: position.y });
+        figure.shape.renderEdges();
 
         if (shape.boundBox) shape.boundBox.render();
+    },
+
+    endMove: function() {
+        var figure = this.control;
+        if (!figure) return;
+
+        var shape = figure.shape;
+        shape.renderContent();
+
+        this.reset();
+
+        if (shape.boundBox) {
+            shape.boundBox.remove();
+        }
+
+        shape.renderEdges();
+        shape.trigger('end:move');
     },
 
     /**
@@ -172,30 +199,18 @@ var Figure = Ds.Figure = Ds.Element.extend({
      */
 
     calculatePosition: function(dx, dy) {
-        var shape = this.shape;
-        var parent = shape.parent;
         return {
-            x: this.calculateX(dx, parent),
-            y: this.calculateY(dy, parent)
+            x: this.calculateX(dx),
+            y: this.calculateY(dy)
         };
     },
 
-    endMove: function() {
-        var control = this.control;
-        if (!control) return;
-
-        var shape = control.shape;
-        shape.renderContent();
-
-        this.reset();
-
-        if (shape.boundBox) {
-            shape.boundBox.remove();
-        }
-
-        shape.renderEdges();
-        shape.trigger('end:move');
-    },
+    /**
+     * Returns the Shape's bounds in the form of
+     * an object { x: x, y: y, width: width, height: height }.
+     *
+     * @return object
+     */
 
     bounds: function() {
         if (this.wrapper)
@@ -206,6 +221,32 @@ var Figure = Ds.Figure = Ds.Element.extend({
         };
     },
 
+    /**
+     * Returns the limits in which the figure can evolve. The limits
+     * are given  in the form of an object
+     * { x: x, y: y, width: width, height: height }.
+     *
+     * @return object
+     */
+
+    limits: function() {
+        var shape = this.shape;
+        if (this.shape.parent) {
+            return this.shape.parent.bounds();
+        } else {
+            var canvas = this.renderer();
+            return {
+                x: 0, y: 0,
+                width: canvas.width,
+                height: canvas.height
+            };
+        }
+    },
+
+    /**
+     * Removes the figure from the canvas.
+     */
+
     remove: function() {
         if (this.wrapper) {
             this.wrapper.remove();
@@ -215,12 +256,18 @@ var Figure = Ds.Figure = Ds.Element.extend({
         return this;
     },
 
+    /**
+     * Moves the figure according to the given dx, dy.
+     */
+
     translate: function(dx, dy) {
         if (this.wrapper) {
-            this.wrapper.translate(dx, dy);
-            this.set('x', this.wrapper.attr('x'));
-            this.set('y', this.wrapper.attr('y'));
+            this.wrapper.transform('t' + dx + ',' + dy);
+            this.attributes.x = this.wrapper.attr('x');
+            this.attributes.y = this.wrapper.attr('y');
+        //    this.set({ x: this.wrapper.attr('x'), y: this.wrapper.attr('y') });
         }
+        return this;
     },
 
     show: function() {
@@ -261,14 +308,16 @@ var Figure = Ds.Figure = Ds.Element.extend({
         stroke: 'none',
         'fill-opacity': 1,
         'stroke-opacity': 1,
-        'stroke-width': 1
+        'stroke-width': 1,
+        'cursor': 'default'
     },
 
     figures: {
         'rect': 'Rectangle',
         'circle': 'Circle',
         'ellipse': 'Ellipse',
-        'path': 'Path'
+        'path': 'Path',
+        'text': 'Text'
     },
 
     create: function(shape, figure) {
