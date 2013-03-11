@@ -955,6 +955,13 @@ var Figure = Ds.Figure = Ds.Element.extend({
         return this;
     },
 
+    isPointInside: function(point) {
+        var x = point.x, y = point.y;
+        var box = this.wrapper.getABox();
+
+        return x >= box.x && x <= box.xRight && y >= box.y && y <= box.yBottom;
+    },
+
     show: function() {
         if (this.wrapper) this.wrapper.show();
     },
@@ -1363,7 +1370,7 @@ var Text = Ds.Text = Ds.Figure.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Figure.apply(this, [attributes]);
-        this.defaults = Text.defaults;
+        this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
         this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
         this.position = Text.getPosition(this, attributes);
         this.initialize(attributes);
@@ -1631,6 +1638,23 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
         _.each(this.children, function(child) { child.toBack(); });
         if (this.figure) this.figure.toBack();
         return this;
+    },
+
+    isPointInside: function(point) {
+        if (!this.figure)
+            return false;
+        return this.figure.isPointInside(point);
+    },
+
+    getByPoint: function(point) {
+        var result = [];
+        if (this.isPointInside(point)) {
+            result.push(this);
+            result.push(_.map(this.children, function(c) {
+                return c.getByPoint(point);
+            }));
+        }
+        return result;
     }
 
 });
@@ -1817,6 +1841,7 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
         if (!this.layout) return;
         //this.set(this.layout.preferredSize());
         this.layout.layout();
+        this.renderEdges();
     }
 
 });
@@ -2084,15 +2109,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         if (isNaN(point.x) || isNaN(point.y))
             return [];
 
-        var paper = this.paper();
-        var elements = paper.getElementsByPoint(point.x, point.y);
-        var returnShape = function(set, el) {
-            if (el.control && el.control.shape)
-                set.push(el.control.shape);
-            return set;
+        var findShapes = function(shape) {
+            return shape.getByPoint(point);
         };
-
-        return _.reduce(elements, returnShape, []);
+        return _.flatten(_.map(this.get('children'), findShapes));
     },
 
     /**
@@ -3403,7 +3423,6 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
 
-//        console.log(this.draggable);
 //        if (this.draggable) this.asDraggable();
 
         return this;
@@ -3661,14 +3680,6 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         return this;
     },
 
-    /**
-     * @private
-     */
-
-    handleClick: function(e) {
-//        this.dragConnection(e, this.diagram.currentEdge);
-    },
-
     dragConnection: function(e, connectionType) {
         if (e) e.stopPropagation();
         if (!connectionType || typeof connectionType !== 'function') return;
@@ -3797,7 +3808,6 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         return _.clone(this.attributes);
     },
 
-
     /**
      * @private
      */
@@ -3843,7 +3853,9 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderContent: function() {
-        _(this.children).each(function(c) { c.render(); });
+        _(this.children).each(function(c) {
+            c.render();
+        });
         if (!this.parent) { this.doLayout(); }
     },
 
@@ -3920,7 +3932,6 @@ Ds.Resizable = {
     endResize: function() {
         if (this.figure) this.figure.endResize();
 
-        this.renderEdges();
         this.renderContent();
 
         if (this.shadow) this.createShadow();

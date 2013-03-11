@@ -261,15 +261,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         if (isNaN(point.x) || isNaN(point.y))
             return [];
 
-        var paper = this.paper();
-        var elements = paper.getElementsByPoint(point.x, point.y);
-        var returnShape = function(set, el) {
-            if (el.control && el.control.shape)
-                set.push(el.control.shape);
-            return set;
+        var findShapes = function(shape) {
+            return shape.getByPoint(point);
         };
-
-        return _.reduce(elements, returnShape, []);
+        return _.flatten(_.map(this.get('children'), findShapes));
     },
 
     /**

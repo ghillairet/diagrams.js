@@ -270,6 +270,13 @@ var Figure = Ds.Figure = Ds.Element.extend({
         return this;
     },
 
+    isPointInside: function(point) {
+        var x = point.x, y = point.y;
+        var box = this.wrapper.getABox();
+
+        return x >= box.x && x <= box.xRight && y >= box.y && y <= box.yBottom;
+    },
+
     show: function() {
         if (this.wrapper) this.wrapper.show();
     },

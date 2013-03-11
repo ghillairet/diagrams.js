@@ -134,6 +134,23 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
         _.each(this.children, function(child) { child.toBack(); });
         if (this.figure) this.figure.toBack();
         return this;
+    },
+
+    isPointInside: function(point) {
+        if (!this.figure)
+            return false;
+        return this.figure.isPointInside(point);
+    },
+
+    getByPoint: function(point) {
+        var result = [];
+        if (this.isPointInside(point)) {
+            result.push(this);
+            result.push(_.map(this.children, function(c) {
+                return c.getByPoint(point);
+            }));
+        }
+        return result;
     }
 
 });

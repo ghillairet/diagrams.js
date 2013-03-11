@@ -149,14 +149,6 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         return this;
     },
 
-    /**
-     * @private
-     */
-
-    handleClick: function(e) {
-//        this.dragConnection(e, this.diagram.currentEdge);
-    },
-
     dragConnection: function(e, connectionType) {
         if (e) e.stopPropagation();
         if (!connectionType || typeof connectionType !== 'function') return;
@@ -285,7 +277,6 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         return _.clone(this.attributes);
     },
 
-
     /**
      * @private
      */
@@ -331,7 +322,9 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderContent: function() {
-        _(this.children).each(function(c) { c.render(); });
+        _(this.children).each(function(c) {
+            c.render();
+        });
         if (!this.parent) { this.doLayout(); }
     },
 
@@ -408,7 +401,6 @@ Ds.Resizable = {
     endResize: function() {
         if (this.figure) this.figure.endResize();
 
-        this.renderEdges();
         this.renderContent();
 
         if (this.shadow) this.createShadow();

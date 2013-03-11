@@ -117,6 +117,7 @@ var LayoutElement = Ds.LayoutElement = Ds.DiagramElement.extend(/** @lends Layou
         if (!this.layout) return;
         //this.set(this.layout.preferredSize());
         this.layout.layout();
+        this.renderEdges();
     }
 
 });

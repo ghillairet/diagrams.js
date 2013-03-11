@@ -39,7 +39,6 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
 
-//        console.log(this.draggable);
 //        if (this.draggable) this.asDraggable();
 
         return this;

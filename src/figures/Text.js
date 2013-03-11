@@ -4,7 +4,7 @@ var Text = Ds.Text = Ds.Figure.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Figure.apply(this, [attributes]);
-        this.defaults = Text.defaults;
+        this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
         this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
         this.position = Text.getPosition(this, attributes);
         this.initialize(attributes);
