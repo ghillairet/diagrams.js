@@ -53,80 +53,6 @@ Raphael.el.y = function () {
     }
 };
 
-/**
-var resizeEllipse = function(dx, dy, direction, min, limits) {
-    if (_.include(['ne', 'nw', 'n'], direction)) {
-        dy = -dy;
-    }
-    if (_.include(['nw', 'sw', 'n'], direction)) {
-        dx = -dx;
-    }
-    var sumx = this.orx + dx;
-    var sumy = this.orx + dy;
-    return {
-        rx: isNatural(sumx) ? sumx : this.orx,
-            ry: isNatural(sumy) ? sumy : this.ory
-    };
-};
-
-var resizeCircle = function(dx, dy, direction, min, limits) {
-    if (_.include(['ne', 'nw', 'n'], direction)) {
-        dy = -dy;
-    }
-    var sumr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
-    return {
-        r: isNatural(sumr) ? sumr : this.or
-    };
-};
-
-var resizeRect = function(dx, dy, direction, min, limits) {
-    var x = this.ox, y = this.oy, w = this.ow, h = this.oh;
-
-    if (direction !== 'n' && direction !== 's') {
-        w = this.ow + dx;
-    }
-    if (direction !== 'w' && direction !== 'e') {
-        h = this.oh + dy;
-    }
-    if (_.include(['sw', 'nw', 'w'], direction)) {
-        w = this.ow - dx;
-        if (w < min.width) {
-            dx = dx - (min.width - w);
-        }
-        x = this.ox + dx;
-    }
-    if (_.include(['ne', 'nw', 'n'], direction)) {
-        h = this.oh - dy;
-        if (h < min.height) {
-            dy = dy - (min.height - h);
-        }
-        y = this.oy + dy;
-    }
-
-    if (h < min.height) h = min.height;
-    if (w < min.width) w = min.width;
-    if (w > limits.width) w = limits.width;
-    if (h > limits.height) h = limits.height;
-    if (x < limits.x) x = limits.x;
-    if (y < limits.y) y = limits.y;
-
-    return { width: w, height: h, y: y, x: x };
-};
-
-Raphael.el.rdxy = function(dx, dy, direction, min, limits) {
-    switch (this.type) {
-    case 'ellipse':
-        return resizeEllipse.apply(this, [dx, dy, direciton, min, limits]);
-    case 'circle':
-        return resizeCircle.apply(this, [dx, dy, direction, min, limits]);
-    case 'rect':
-        return resizeRect.apply(this, [dx, dy, direction, min, limits]);
-    default:
-        return {};
-    }
-};
-**/
-
 Raphael.el.o = function () {
     var attr = this.attr();
 
@@ -244,10 +170,33 @@ var Point = Ds.Point = function Point(x, y) {
     }
 };
 
+Point.prototype.isInside = function(box) {
+    if (box && box.x) {
+        return this.x >= box.x &&
+            this.x <= box.xRight &&
+            this.y >= box.y &&
+            this.y <= box.yBottom;
+    } else return false;
+};
+
 // Calculates angle for arrows
 
 Point.prototype.theta = function(point) {
     return Point.theta(this, point);
+};
+
+Point.prototype.vector = function(point) {
+    return Point.vector(this, point);
+};
+
+Point.prototype.add = function(point) {
+    this.x += point.y;
+    this.y += point.y;
+};
+
+Point.prototype.sub = function(point) {
+    this.x -= point.x;
+    this.y -= point.y;
 };
 
 Point.prototype.equals = function(point) {
@@ -266,6 +215,13 @@ Point.theta = function(p1, p2) {
     return {
         degrees: 180 * rad / Math.PI,
         radians: rad
+    };
+};
+
+Point.vector = function(p1, p2) {
+    return {
+        x: p2.x - p1.x,
+        y: p2.y - p1.y
     };
 };
 
@@ -1372,7 +1328,7 @@ var Text = Ds.Text = Ds.Figure.extend({
         Ds.Figure.apply(this, [attributes]);
         this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
         this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
-        this.position = Text.getPosition(this, attributes);
+        this.position = Text.getPosition(this, attributes.figure);
         this.initialize(attributes);
     },
 
@@ -1407,10 +1363,10 @@ var Text = Ds.Text = Ds.Figure.extend({
             text.attr('x', box.xCenter);
         }
         if (this.position === 'left') {
-            text.attr('x', box.x + (lbox.width / 2) + this.xOffset);
+            text.attr('x', box.x + (lbox.width / 2));
         }
         if (this.position === 'right') {
-            text.attr('x', box.xRight - this.xOffset - (lbox.width / 2));
+            text.attr('x', box.xRight - (lbox.width / 2));
         }
     },
 
@@ -1430,9 +1386,13 @@ var Text = Ds.Text = Ds.Figure.extend({
 
         this.wrapper = renderer.rect();
         this.text = renderer.text(0, 0, this.get('text'));
+
+        var box = this.text.getBBox();
+        this.set('width', box.width);
+        this.set('height', box.height);
+
         this.wrapper.attr({ 'stroke': 'none', 'fill-opacity': 0, 'fill': 'none' });
         this.set({x : this.get('x'), y: this.get('y') });
-        this.set({ width: this.get('width'), height: this.get('height') });
         this.layoutText();
         this.toFront();
         this.wrapper.control = this;
@@ -1484,19 +1444,14 @@ var Text = Ds.Text = Ds.Figure.extend({
 
     positions: [ 'center', 'left', 'right' ],
 
-    getPosition: function(label, properties)  {
-        var position = label.figure ? label.figure.position || 'center' : 'center';
-
+    getPosition: function(text, properties)  {
+        var position = text.position || 'center';
         if (properties && properties.position) {
-            position = properties.position;
-
-            if (position.x && position.y) {
-                return position;
-            } else if (_.include(Label.positions, position)) {
-                return position;
+            if (_.include(Text.positions, properties.position)) {
+                position = properties.position;
             }
         }
-        return position; // default
+        return position;
     }
 
 });
@@ -1898,6 +1853,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         this._selection = null;
         this._currentSource = null;
         this._currentEdge = null;
+        this.isSelecting = false;
         this._handlers = [];
 
         this.set('edges', []);
@@ -1981,6 +1937,8 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
         this.on('click', this.deselect, this);
         this.on('click', this.handleTextInput, this);
+        this.on('mousedown touchstart', this.changeViewBox);
+        this.on('mousedown', this.selectGroup);
 
         return this;
     },
@@ -1989,7 +1947,9 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         'click', 'dblclick',
         'mouseout', 'mouseup',
         'mouseover', 'mousedown',
-        'mousemove'
+        'mousemove', 'touchstart',
+        'touchmove', 'touchend',
+        'touchcancel'
     ],
 
     /**
@@ -2024,13 +1984,38 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
+     * SetViewBox
+     *
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     */
+
+    setViewBox: function(x, y, width, height) {
+        var _x = x || 0;
+        var _y = y || 0;
+        var _width = width || this._paper.width;
+        var _height = height || this._paper.height;
+        if (this._paper && this._paper.setViewBox) {
+            this._paper.setViewBox(_x, _y, _width, _height);
+        }
+    },
+
+    /**
      * Zoom
      *
      * @param String
      */
 
-    zoom: function(direction) {
+    zoom: function(factor) {
+        var x = this.wrapper.attr('x');
+        var y = this.wrapper.attr('y');
+        var paper = this.paper();
+        var width = this._paper.width = paper.width + factor;
+        var height = this._paper.height = paper.height + factor;
 
+        this.setViewBox(x, y, width + factor, height + factor);
     },
 
     /**
@@ -2050,15 +2035,113 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
+     * @private
+     */
+
+    changeViewBox: function(e) {
+        if (this.isSelecting) return;
+
+        var startPoint = Point.get(this, e),
+            endPoint;
+
+        this.wrapper.toFront();
+        var move = function(ee) {
+            var wp = new Point(this.wrapper.attr('x'), this.wrapper.attr('y'));
+            ee.stopImmediatePropagation();
+            endPoint = Point.get(this, ee);
+            wp.sub(startPoint.vector(endPoint));
+            this.wrapper.attr(wp);
+            this.setViewBox(wp.x, wp.y);
+            startPoint = endPoint;
+        };
+        var up = function(ee) {
+            ee.stopImmediatePropagation();
+            this.wrapper.toBack();
+            this.off('mouseup', up);
+            this.off('mousemove', move);
+        };
+        this.on('mouseup', up);
+        this.on('mousemove', move);
+    },
+
+    /**
+     * @private
+     */
+
+    selectGroup: function(e) {
+        if (!this.isSelecting) return;
+
+        var startPoint = Point.get(this, e);
+        var selectionBox = this.paper().rect(startPoint.x, startPoint.y, 0, 0);
+        var endPoint, box, dx, dy, ow, w, oh, h;
+        selectionBox.attr({
+            'fill-opacity': 0.15,
+            'stroke-opacity': 0.5,
+            fill: '#007fff',
+            stroke: '#007fff'
+        });
+
+        this.wrapper.toFront();
+        var move = function(ee) {
+            ee.stopImmediatePropagation();
+            endPoint = Point.get(this, ee);
+            box = selectionBox.getABox();
+            dx = endPoint.x - startPoint.x;
+            dy = endPoint.y - startPoint.y;
+            ow = selectionBox.attr('width');
+            oh = selectionBox.attr('height');
+
+            // defaults
+            w = ow + dx;
+            h = oh + dy;
+
+            // special cases
+            if (box.x <= endPoint.x) {
+                if (box.xRight > endPoint.x && dx > 0) {
+                    selectionBox.attr('x', endPoint.x);
+                    w = ow - dx;
+                }
+            } else {
+                selectionBox.attr('x', endPoint.x);
+                w = ow - dx;
+            }
+            if (box.y > endPoint.y || (dy > 0 && box.yBottom > endPoint.y)) {
+                selectionBox.attr('y', endPoint.y);
+                h = oh - dy;
+            }
+            if (w >= 0 && h >= 0) {
+                selectionBox.attr({ width: w, height: h });
+            }
+
+            startPoint = endPoint;
+        };
+        var up = function(ee) {
+            ee.stopImmediatePropagation();
+            this.wrapper.toBack();
+            this.isSelecting = false;
+            this.off('mouseup', up);
+            this.off('mousemove', move);
+
+            // TODO
+            // var shapes = this.getShapesByBox(selectionBox.getABox());
+            // _.each(shapes, function(shape) { if (shape.select) shape.select(); });
+            selectionBox.remove();
+        };
+        this.on('mouseup', up);
+        this.on('mousemove', move);
+    },
+
+    /**
+     * Creates a Shape and add it as children of the diagram.
      *
-     * @param Function
-     * @param Object
-     * @return Shape
+     * @param {function} Shape constructor
+     * @param {object} Shape options
+     * @return {Shape}
      */
 
     createShape: function(func, attributes) {
-        var shape = null,
-            attrs = attributes || {};
+        var shape = null;
+        var attrs = attributes || {};
 
         if (!func) {
             throw new Error('Cannot create Shape if Shape constructor is missing.');
@@ -2071,7 +2154,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Shape
+     * Removes the given Shape. this triggers the
+     * remove:children event.
+     *
+     * @param {Shape}
      */
 
     removeShape: function(shape) {
@@ -2085,8 +2171,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Integer
-     * @return Shape
+     * Gets a Shape by it's id.
+     *
+     * @param {integer} shape's id
+     * @return {Shape}
      */
 
     getShape: function(id) {
@@ -2099,6 +2187,13 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         return shape;
     },
 
+    /**
+     * Returns all shapes containing the given point.
+     *
+     * @param {Point}
+     * @return {array}
+     *
+     */
     getShapesByPoint: function(point) {
         var args = arguments;
 
@@ -2116,9 +2211,30 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Function
-     * @param Object
-     * @return Connection
+     * Returns all shapes inside the given box.
+     *
+     * @param {object} box
+     * @return {array} shapes inside box
+     */
+
+    getShapesByBox: function(box) {
+        if (!box || !box.x) return [];
+        var bounds;
+        var findShapes = function(shape) {
+            bounds = shape.bounds();
+            return box.x <= bounds.x && box.xRight >= bounds.x &&
+                box.y <= bounds.y && box.yBottom >= bounds.y;
+        };
+        return _.filter(this.get('children'), findShapes);
+    },
+
+    /**
+     * Creates a Connection and add it to the diagram. The options
+     * argument can contain the source and target Shape.
+     *
+     * @param {function} Connection constructor
+     * @param {object} Connection options
+     * @return {Connection}
      */
 
     createConnection: function(func, attributes) {
@@ -2144,7 +2260,9 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Connection
+     * Removes the Connection from the diagram.
+     *
+     * @param {Connection}
      */
 
     removeConnection: function(connection) {
@@ -2159,8 +2277,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Integer
-     * @return Connection
+     * Gets a Connection by it's id.
+     *
+     * @param {integer} Connection's id
+     * @return {Connection}
      */
 
     getConnection: function(id) {
@@ -2177,8 +2297,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Shape
-     * @return Boolean
+     * @private
      */
 
     canConnect: function(node) {
@@ -2195,7 +2314,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * @param Shape
+     * @private
      */
 
     connect: function(node) {
@@ -2215,6 +2334,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         return connection;
     },
 
+    /**
+     * @private
+     */
+
     handleTextInput: function() {
         if (!this.inputText) return;
 
@@ -2233,12 +2356,22 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         }
     },
 
+    /**
+     * Deselects all currently selected Shapes or Connections.
+     */
+
     deselect: function() {
         if (this._selection && typeof this._selection.deselect === 'function') {
             this._selection.deselect();
             delete this._selection;
         }
     },
+
+    /**
+     * Sets the current selection.
+     *
+     * @param {DiagramElement}
+     */
 
     setSelection: function(element) {
         if (this._selection) {
@@ -2248,6 +2381,12 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         this.trigger('select', element);
     },
 
+    /**
+     * Returns the current selection
+     *
+     * @return {DiagramElement}
+     */
+
     getSelection: function() {
         return this._selection;
     },
@@ -2256,21 +2395,33 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
     },
 
+    /**
+     * Returns JSON representation of the diagram.
+     */
+
     toJSON: function() {
 
     },
 
-    // Private methods
+    /**
+     * @private
+     */
 
     _initPaper: function() {
-        if (!this.el)
-            throw new Error('Cannot initialize Raphael Object, Diagram Element is missing, use setElement() before.');
+        if (!this.el) {
+            throw new Error('Cannot initialize Raphael Object, ' +
+                    'Diagram Element is missing, use setElement() before.');
+        }
 
         if (this._paper) return;
 
         this._paper = Raphael(this.el, this.width, this.height);
-        this._paper.setViewBox(0, 0, this._paper.width, this._paper.height);
+        this.setViewBox(0, 0, this._paper.width, this._paper.height);
     },
+
+    /**
+     * @private
+     */
 
     _canCreate: function( func ) {
         var child = _.find(this.children, function(c) {
