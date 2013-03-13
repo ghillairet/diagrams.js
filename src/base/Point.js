@@ -19,10 +19,33 @@ var Point = Ds.Point = function Point(x, y) {
     }
 };
 
+Point.prototype.isInside = function(box) {
+    if (box && box.x) {
+        return this.x >= box.x &&
+            this.x <= box.xRight &&
+            this.y >= box.y &&
+            this.y <= box.yBottom;
+    } else return false;
+};
+
 // Calculates angle for arrows
 
 Point.prototype.theta = function(point) {
     return Point.theta(this, point);
+};
+
+Point.prototype.vector = function(point) {
+    return Point.vector(this, point);
+};
+
+Point.prototype.add = function(point) {
+    this.x += point.y;
+    this.y += point.y;
+};
+
+Point.prototype.sub = function(point) {
+    this.x -= point.x;
+    this.y -= point.y;
 };
 
 Point.prototype.equals = function(point) {
@@ -41,6 +64,13 @@ Point.theta = function(p1, p2) {
     return {
         degrees: 180 * rad / Math.PI,
         radians: rad
+    };
+};
+
+Point.vector = function(p1, p2) {
+    return {
+        x: p2.x - p1.x,
+        y: p2.y - p1.y
     };
 };
 
