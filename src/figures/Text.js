@@ -6,7 +6,7 @@ var Text = Ds.Text = Ds.Figure.extend({
         Ds.Figure.apply(this, [attributes]);
         this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
         this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
-        this.position = Text.getPosition(this, attributes);
+        this.position = Text.getPosition(this, attributes.figure);
         this.initialize(attributes);
     },
 
@@ -41,10 +41,10 @@ var Text = Ds.Text = Ds.Figure.extend({
             text.attr('x', box.xCenter);
         }
         if (this.position === 'left') {
-            text.attr('x', box.x + (lbox.width / 2) + this.xOffset);
+            text.attr('x', box.x + (lbox.width / 2));
         }
         if (this.position === 'right') {
-            text.attr('x', box.xRight - this.xOffset - (lbox.width / 2));
+            text.attr('x', box.xRight - (lbox.width / 2));
         }
     },
 
@@ -64,9 +64,13 @@ var Text = Ds.Text = Ds.Figure.extend({
 
         this.wrapper = renderer.rect();
         this.text = renderer.text(0, 0, this.get('text'));
+
+        var box = this.text.getBBox();
+        this.set('width', box.width);
+        this.set('height', box.height);
+
         this.wrapper.attr({ 'stroke': 'none', 'fill-opacity': 0, 'fill': 'none' });
         this.set({x : this.get('x'), y: this.get('y') });
-        this.set({ width: this.get('width'), height: this.get('height') });
         this.layoutText();
         this.toFront();
         this.wrapper.control = this;
@@ -118,19 +122,14 @@ var Text = Ds.Text = Ds.Figure.extend({
 
     positions: [ 'center', 'left', 'right' ],
 
-    getPosition: function(label, properties)  {
-        var position = label.figure ? label.figure.position || 'center' : 'center';
-
+    getPosition: function(text, properties)  {
+        var position = text.position || 'center';
         if (properties && properties.position) {
-            position = properties.position;
-
-            if (position.x && position.y) {
-                return position;
-            } else if (_.include(Label.positions, position)) {
-                return position;
+            if (_.include(Text.positions, properties.position)) {
+                position = properties.position;
             }
         }
-        return position; // default
+        return position;
     }
 
 });
