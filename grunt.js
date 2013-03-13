@@ -7,6 +7,7 @@ module.exports = function(grunt) {
                 src: [
                     'build/start.js',
                     'src/extensions.js',
+                    'src/styles/Styles.js',
                     'src/base/Point.js',
                     'src/base/Line.js',
                     'src/base/Events.js',
@@ -23,7 +24,6 @@ module.exports = function(grunt) {
                     'src/diagram/Diagram.js',
                     'src/diagram/Toolbox.js',
                     'src/layout/GridLayout.js',
-//                    'src/layout/FlexgridLayout.js',
                     'src/layout/FlowLayout.js',
                     'src/layout/XYLayout.js',
                     'src/layout/BorderLayout.js',
@@ -33,14 +33,12 @@ module.exports = function(grunt) {
                     'src/shape/Image.js',
                     'src/shape/Label.js',
                     'src/shape/Shape.js',
-//                    'src/shape/Compartment.js',
                     'src/connection/Arrows.js',
                     'src/connection/Anchor.js',
                     'src/connection/ConnectionEnd.js',
                     'src/connection/ConnectionLabel.js',
                     'src/connection/FlexPoint.js',
                     'src/connection/Connection.js',
-//                    'src/palette/Palette.js',
                     'build/end.js'
                 ],
                 dest: 'dist/diagrams.js'

@@ -150,6 +150,36 @@ Raphael.fn.triangle = function(x, y, size) {
 
 
 /**
+ * Styles
+ */
+
+Ds.Styles = {
+
+    moveStyle: {
+        fill: 'grey',
+        'fill-opacity': 0.2,
+        'stroke-width': 0
+    },
+    resizeStyle: {
+        fill: 'grey',
+        'fill-opacity': 0.2,
+        'stroke-width': 0
+    },
+    selectStyle: {
+        fill: 'none',
+        stroke: 'black',
+        'stroke-width': 1
+    },
+    anchorStyle: {
+        fill: 'black',
+        stroke: 'none',
+        'fill-opacity': 1
+    }
+
+};
+
+
+/**
  * @name Point
  *
  * @class Represents a 2D Point.
@@ -3680,19 +3710,6 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
 _.extend(Ds.Label.prototype, Ds.Draggable, Ds.Events);
 
 
-
-/*
- * Styles
- */
-
-Ds.Styles = {
-
-    moveStyle: { fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 },
-    resizeStyle: { fill: 'grey', 'fill-opacity': 0.2, 'stroke-width': 0 },
-    selectStyle: { fill: 'none', stroke: 'black', 'stroke-width': 1 },
-    anchorStyle: { fill: 'black', stroke: 'none', 'fill-opacity': 1 }
-
-};
 
 /** @name Shape
  *  @class Represents a Shape
