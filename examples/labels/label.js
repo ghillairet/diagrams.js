@@ -6,14 +6,12 @@
         figure: {
             type: 'text',
             text: 'I am a Label',
-            width: 100,
-            height: 40,
             fill: 'blue',
-            'text-fill': 'red'
+            position: 'center'
         },
         gridData: {
-            horizontalAlignment: 'fill',
-            verticalAlignment: 'fill',
+            horizontalAlignment: 'end',
+            verticalAlignment: 'center',
             grabExcessHorizontalSpace: true,
             grabExcessVerticalSpace: true
         }
@@ -37,12 +35,36 @@
         }
     });
 
+    var RectangleManyLabels = Ds.Shape.extend({
+        figure: {
+            type: 'rect',
+            width: 140,
+            height: 50,
+            fill: 'orange'
+        },
+
+        layout: {
+            type: 'grid',
+            columns: 1,
+            marginHeight: 5,
+            marginWidth: 5
+        }
+    });
+
     var diagram = new Ds.Diagram({ el: 'diagram' });
+
     var r = new Rectangle({ diagram: diagram, x: 200, y: 100 });
+
+    var r2 = new RectangleManyLabels({ diagram: diagram, x: 400, y: 120 });
+    r2.add(new Label({ text: 'short label' }));
+    r2.add(new Label({ text: 'quit longer label' }));
+    r2.add(new Label({ text: 'this is a very very long label' }));
+
     var l = new Label({ diagram: diagram, x: 100, y: 100 });
     diagram.get('children').push(l);
+
     diagram.render();
 
-//    console.log(l);
+    diagram.setViewBox(100, 100);
 
 })();
