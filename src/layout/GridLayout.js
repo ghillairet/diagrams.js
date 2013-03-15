@@ -206,7 +206,11 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
                 x += cell.width + this.hgap;
             }, this);
 
-            var max = _.max(row.cells, function(cell) { return cell.height; });
+            var max = null;
+            if (row.cells.length) {
+                max = _.max(row.cells, function(cell) { return cell.height; });
+            }
+
             row.height = max ? max.height : 0;
             y += row.height + this.vgap;
             x = baseX;

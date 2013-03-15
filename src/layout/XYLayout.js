@@ -22,7 +22,6 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
             elements = shape.children,
             l = elements.length, i = 0, el;
 
-        console.log('layout', this.shape, bounds);
         for (; i < l ; i++) {
             el = elements[i];
             el.figure.translate(bounds.x, bounds.y);
@@ -35,15 +34,15 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
      */
 
     minimumSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     },
 
     preferredSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     },
 
     maximumSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     }
 
 });
