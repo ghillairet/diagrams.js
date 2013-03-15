@@ -6,25 +6,37 @@
  */
 
 var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
+    resizable: false,
+    editable: true,
+    draggable: true,
 
     constructor: function(attributes) {
+        if (!attributes) attributes = {};
         Ds.LayoutElement.apply(this, [attributes]);
-
-        this.resizable = attributes.resizable || false;
-        if (_.isBoolean(attributes.draggable))
-            this.draggable = attributes.draggable;
-        this.editable = attributes.editable || true;
-
-        this.xOffset = 5;
-        this.yOffset = 5;
-
+        this.initProperties(attributes);
         var image = this.figure ? this.figure.image : attributes.figure.image;
         if (image) this.setImage(image);
 
         this.initialize(attributes);
     },
 
-    // Should be only one image.
+    /**
+     * @private
+     */
+
+    initProperties: function(attributes) {
+        var properties = ['resizable', 'editable', 'draggable'];
+        var setBoolean = function(property) {
+            if (_.isBoolean(attributes[property])) {
+                this[property] = attributes[property];
+            }
+        };
+        _.each(properties, setBoolean, this);
+    },
+
+    /**
+    */
+
     setImage: function(attributes) {
         attributes.parent = this;
         var image = new Ds.Image( attributes );
@@ -32,30 +44,49 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         return image;
     },
 
+    /**
+     * Renders the Label on the canvas.
+     */
+
     render: function() {
         this.figure.render();
         this.figure.toFront();
 
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
-
-//        if (this.draggable) this.asDraggable();
+        if (this.draggable) this.figure.asDraggable();
 
         return this;
     },
 
-    setText: function( text, silent ) {
+    /**
+     * Sets the text. It will trigger a
+     * change:text event unless the silent
+     * argument is set to false.
+     *
+     * @param {string} text
+     * @param {boolean} silent event
+     */
+
+    setText: function(text, silent) {
         this.set('text', text);
         this.doLayout();
-
-        if (!silent) {
-            this.trigger('change:text', this);
-        }
+        if (!silent) this.trigger('change:text', this);
     },
+
+    /**
+     * Returns the text value.
+     *
+     * @return {string}
+     */
 
     getText: function() {
         return this.get('text');
     },
+
+    /**
+     * Removes the Label from the canvas.
+     */
 
     remove: function() {
         if (this.image) {
@@ -65,6 +96,10 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
             this.figure.remove();
         }
     },
+
+    removeContent: function() {},
+    renderEdges: function() {},
+    renderContent: function() {},
 
     doLayout: function() {
         if (this.figure) this.figure.layoutText();
@@ -86,61 +121,62 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         return this.figure.minimumSize();
     },
 
+    /**
+     * @private
+     */
+
     asEditable: function() {
         var node = this;
-
-        if (!node.label) return;
-
-        var createInputTextForm = function( node ) {
-            var aBox = node.label.getABox(),
-                pBox = node.wrapper.getABox(),
+        var diagram = node.diagram;
+        var createInputTextForm = function(node) {
+            var box = node.bounds(),
                 px = node.diagram.el.offsetLeft,
                 py = node.diagram.el.offsetTop,
-                x = aBox.x + (isNaN(px) ? 0 : px),
-                y = aBox.y + (isNaN(py) ? 0 : py),
-                w = pBox.width,
-                h = aBox.height + 4;
+                x = box.x + (isNaN(px) ? 0 : px),
+                y = box.y + (isNaN(py) ? 0 : py),
+                w = box.width,
+                h = box.height,
+                id = 'form-input-' + node.get('id');
 
-            var txt = node.textForm = document.createElement('form');
-            txt.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
-
+            var form = document.getElementById(id);
+            if (form) {
+                form.parentNode.removeChild(form);
+            }
+            form = document.createElement('form');
             var inputForm = document.createElement('input');
+
+            form.setAttribute('id', id);
+            form.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
             inputForm.setAttribute('type', 'text');
-            inputForm.value = node.get('text');
-            inputForm.setAttribute('style', 'padding: 0; width:' + w + 'px; height: ' + h + 'px; z-index: 1;');
-            txt.appendChild(inputForm);
+            inputForm.value = node.getText() || '';
+            inputForm.setAttribute('style', 'width:' + w + 'px; height: ' + h + 'px;');
+            form.appendChild(inputForm);
 
-            return { form: txt, input: inputForm };
+            return { form: form, input: inputForm };
         };
+        var handleTextInput = function(e) {
+            e.stopImmediatePropagation();
+            if (!node.el) return;
+            var text = node.el.input.value;
+            node.setText(text);
 
-        var remove = function( node ) {
-            if (node && node.parentNode) {
-                node.parentNode.removeChild( node );
-            }
+            node.el.form.removeEventListener('blur', handleTextInput, true);
+            node.el.form.parentNode.removeChild(node.el.form);
+            delete node.el;
+            delete node.domNode;
         };
-
-        node.label.on('dblclick', function(event) {
-            var ml = node.diagram.modifiedLabel;
-            if (ml && ml !== node) {
-                remove(node.diagram.inputText);
-                remove(node.diagram.modifiedLabel.textForm);
-            }
-
-            if (node.textForm) {
-                remove(node.textForm);
-            }
-
+        node.on('dblclick', function(e) {
+            e.stopImmediatePropagation();
             var el = createInputTextForm( node );
-
-            node.textForm = el.form;
-            node.diagram.inputText = el.input;
-            node.diagram.modifiedLabel = node;
-
-            node.diagram.el.parentNode.appendChild(el.form);
+            node.el = el;
+            node.domNode = node.diagram.el.parentNode;
+            node.domNode.appendChild(el.form);
+            node.el.form.focus();
+            node.el.form.addEventListener('blur', handleTextInput, true);
         });
     }
 
 });
 
-_.extend(Ds.Label.prototype, Ds.Draggable, Ds.Events);
+_.extend(Ds.Label.prototype, Ds.Selectable, Ds.Resizable, Ds.Events);
 

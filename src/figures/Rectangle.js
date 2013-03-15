@@ -4,7 +4,7 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Figure.apply(this, [attributes]);
-        this.defaults = Rectangle.defaults;
+        this.defaults = _.extend({}, Rectangle.defaults);
         this.attributes = _.extend({}, this.defaults, attributes.figure || attributes);
         this.initialize(attributes);
     },
@@ -12,13 +12,14 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     bounds: function() {
         if (this.wrapper)
             return this.wrapper.getABox();
-        else
+        else {
             return {
                 width: this.get('width'),
                 height: this.get('height'),
                 x: this.get('x'),
                 y: this.get('y')
             };
+        }
     },
 
     render: function() {
@@ -74,30 +75,6 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
         if (y < limits.y) y = limits.y;
 
         this.set({ width: w, height: h, y: y, x: x });
-    },
-
-    /**
-     * @private
-     */
-
-    calculateX: function(dx) {
-        var bounds = this.bounds();
-        var limits = this.limits();
-        var x = this.wrapper.ox + dx;
-
-        return Math.min(Math.max(0, x), (limits.width - bounds.width));
-    },
-
-    /**
-     * @private
-     */
-
-    calculateY: function(dy) {
-        var bounds = this.bounds();
-        var limits = this.limits();
-        var y = this.wrapper.oy + dy;
-
-        return Math.min(Math.max(0, y), (limits.height - bounds.height));
     },
 
     minimumSize: function() {

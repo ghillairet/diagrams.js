@@ -37,12 +37,20 @@ var Figure = Ds.Figure = Ds.Element.extend({
     setValue: function(key, value) {
         if (_.has(this.defaults, key)) {
             this.attributes[key] = value;
-            if (key === 'width' || key === 'height') {
-                if (!this.attributes['min-' + key])
-                    this.attributes['min-' + key] = value;
-            }
+            this.setMinValues(key ,value);
             if (this.wrapper) this.wrapper.attr(key, value);
         }
+    },
+
+    /**
+     * @private
+     */
+
+    setMinValues: function(key, value) {
+        if ((key === 'width' || key === 'height') &&
+                !this.attributes['min' + key]) {
+                    this.attributes['min-' + key] = value;
+                }
     },
 
     render: function() {},
@@ -153,16 +161,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
         var shape = figure.shape;
         if (shape.connecting) return;
 
-        /**
-        if (arguments.length === 2) {
-            var x = arguments[0];
-            var y = arguments[1];
-            this.startMove();
-            this.set({ x: x, y: y });
-            this.endMove();
-            return control;
-        }
-        **/
         var position = figure.calculatePosition(dx, dy);
         figure.set({ x: position.x, y: position.y });
         figure.shape.renderEdges();
@@ -191,8 +189,25 @@ var Figure = Ds.Figure = Ds.Element.extend({
      * @private
      */
 
-    calculateX: function() {},
-    calculateY: function() {},
+    calculateX: function(dx) {
+        var bounds = this.bounds();
+        var limits = this.limits();
+        var x = this.wrapper.ox + dx;
+
+        return Math.min(Math.max(0, x), (limits.width - bounds.width));
+    },
+
+    /**
+     * @private
+     */
+
+    calculateY: function(dy) {
+        var bounds = this.bounds();
+        var limits = this.limits();
+        var y = this.wrapper.oy + dy;
+
+        return Math.min(Math.max(0, y), (limits.height - bounds.height));
+    },
 
     /**
      * @private
@@ -339,7 +354,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
                 return new fn(attrs);
             else return new Ds[fn](attrs);
         }
-        //    throw new Error('Cannot create figure for', figure);
     }
 
 });

@@ -5,9 +5,16 @@
 
         figure: {
             type: 'text',
-            text: 'I am a Label',
+            text: 'I am \n a Label'
+       /* ,
+            stroke: '#222299',
             fill: 'blue',
-            position: 'center'
+            'fill-opacity': 0.5,
+            'stroke-opacity': 0.5,
+            'stroke-width': 2,
+            'font-size': 50,
+            'font-weight': 'bold'
+            */
         },
         gridData: {
             horizontalAlignment: 'end',
@@ -52,19 +59,16 @@
     });
 
     var diagram = new Ds.Diagram({ el: 'diagram' });
-
+/*
     var r = new Rectangle({ diagram: diagram, x: 200, y: 100 });
 
     var r2 = new RectangleManyLabels({ diagram: diagram, x: 400, y: 120 });
     r2.add(new Label({ text: 'short label' }));
     r2.add(new Label({ text: 'quit longer label' }));
     r2.add(new Label({ text: 'this is a very very long label' }));
-
+*/
     var l = new Label({ diagram: diagram, x: 100, y: 100 });
     diagram.get('children').push(l);
-
     diagram.render();
-
-    diagram.setViewBox(100, 100);
 
 })();

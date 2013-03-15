@@ -3,11 +3,37 @@ var Text = Ds.Text = Ds.Figure.extend({
 
     constructor: function(attributes) {
         if (!attributes) attributes = {};
+        var attrs = attributes.figure || attributes;
+
         Ds.Figure.apply(this, [attributes]);
+
         this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
-        this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
-        this.position = Text.getPosition(this, attributes.figure);
+        this.attributes = _.extend({}, Text.defaults,
+            _.object(_.filter(_.pairs(attrs), this.filterAttributes)));
+        this.textAttributes = _.extend({}, Text.textDefaults,
+            _.object(_.filter(_.pairs(attrs), this.filterTextAttributes)));
+        this.position = Text.getPosition(this, attrs);
+
         this.initialize(attributes);
+    },
+
+    filterAttributes: function(pair) {
+        return _.has(Text.defaults, pair[0]);
+    },
+
+    /**
+     * @private
+     */
+
+    filterTextAttributes: function(pair) {
+        return _.has(Text.textDefaults, pair[0]);
+    },
+
+    get: function(attr) {
+        if (this.textAttributes[attr])
+            return this.textAttributes[attr];
+        else
+            return this.attributes[attr];
     },
 
     /**
@@ -15,11 +41,12 @@ var Text = Ds.Text = Ds.Figure.extend({
      */
 
     setValue: function(key, value) {
-        if (_.has(this.defaults, key)) {
+        if (_.has(this.textAttributes, key)) {
+            this.textAttributes[key] = value;
+            if (this.text) this.text.attr(key, value);
+        } else {
             this.attributes[key] = value;
-            if (this.text && _.contains(Text.textDefaults, key)) {
-                this.text.attr(key, value);
-            } else if (this.wrapper) {
+            if (this.wrapper) {
                 if (_.contains(['width', 'height', 'x', 'y'], key)) {
                     this.layoutText();
                 }
@@ -31,6 +58,7 @@ var Text = Ds.Text = Ds.Figure.extend({
     layoutText: function() {
         if (!this.text) return;
 
+        this.resizeBox();
         var box = this.bounds();
         var text = this.text;
         var lbox = text.getABox();
@@ -63,20 +91,34 @@ var Text = Ds.Text = Ds.Figure.extend({
         var renderer = this.renderer();
 
         this.wrapper = renderer.rect();
-        this.text = renderer.text(0, 0, this.get('text'));
+        this.text = renderer.text(0, 0, this.textAttributes.text);
+        this.text.attr(this.textAttributes);
 
-        var box = this.text.getBBox();
-        this.set('width', box.width);
-        this.set('height', box.height);
+        this.set({ x : this.get('x'), y: this.get('y') });
+        this.wrapper.attr(this.attributes).attr({
+            stroke: 'none',
+            'fill': 'white',
+            'fill-opacity': 0
+        });
 
-        this.wrapper.attr({ 'stroke': 'none', 'fill-opacity': 0, 'fill': 'none' });
-        this.set({x : this.get('x'), y: this.get('y') });
         this.layoutText();
         this.toFront();
         this.wrapper.control = this;
-        this.bindEvents(this.text);
+        this.bindEvents();
 
         return this;
+    },
+
+    /**
+     * @private
+     */
+
+    resizeBox: function() {
+        var box = this.text.getBBox();
+        var w = this.get('width');
+        var h = this.get('height');
+        if (w < box.width) this.set('width', box.width);
+        if (h < box.height) this.set('height', box.height);
     },
 
     remove: function() {
@@ -99,26 +141,38 @@ var Text = Ds.Text = Ds.Figure.extend({
     },
 
     toFront: function() {
-        this.wrapper.toFront();
+        if (!this.wrapper) return;
         this.text.toFront();
+        this.wrapper.toFront();
+    },
+
+    toBack: function() {
+        if (!this.wrapper) return;
+        this.text.toBack();
+        this.wrapper.toBack();
     }
 
 }, {
 
     textDefaults: {
-        'font-size': 10,
-        'text': 'Label',
-        'font-weight': 400,
-        'font-style': 'normal',
+        'font-size': 12,
+        text: 'Label',
+        'font-weight': 'normal', // normal | bold | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+        'font-style': 'normal', // normal | italic | oblique
         'font-family': 'Arial',
-        'fill': 'black'
+        fill: 'black',
+        'fill-opacity': 1,
+        stroke: 'none',
+        'stroke-opacity': 1,
+        'stroke-width': 1
     },
 
-    defaults: _.extend({}, Figure.defaults, {
+    defaults: {
         width: 0,
         height: 0,
-        stroke: 'none'
-    }),
+        x: 0,
+        y: 0
+    },
 
     positions: [ 'center', 'left', 'right' ],
 
