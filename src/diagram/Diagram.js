@@ -51,6 +51,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         this._currentSource = null;
         this._currentEdge = null;
         this.isSelecting = false;
+        this.isDragging = false;
         this._handlers = [];
 
         this.set('edges', []);
@@ -132,10 +133,9 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         _.each(this.get('children'), function(child) { child.render(); });
         _.each(this.get('edges'), function(edge) { edge.render(); });
 
-        this.on('click', this.deselect, this);
-        this.on('click', this.handleTextInput, this);
         this.on('mousedown touchstart', this.changeViewBox);
-        this.on('mousedown', this.selectGroup);
+        this.on('mousedown touchstart', this.selectGroup);
+        this.on('click', this.deselect, this);
 
         return this;
     },
@@ -236,7 +236,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     changeViewBox: function(e) {
-        if (this.isSelecting) return;
+        if (!this.isDragging) return;
 
         var startPoint = Point.get(this, e),
             endPoint;
@@ -254,11 +254,11 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         var up = function(ee) {
             ee.stopImmediatePropagation();
             this.wrapper.toBack();
-            this.off('mouseup', up);
-            this.off('mousemove', move);
+            this.off('mouseup touchend touchcancel', up);
+            this.off('mousemove touchmove', move);
         };
-        this.on('mouseup', up);
-        this.on('mousemove', move);
+        this.on('mouseup touchend touchcancel', up);
+        this.on('mousemove touchmove', move);
     },
 
     /**
@@ -316,16 +316,16 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
             ee.stopImmediatePropagation();
             this.wrapper.toBack();
             this.isSelecting = false;
-            this.off('mouseup', up);
-            this.off('mousemove', move);
+            this.off('mouseup touchend touchcancel', up);
+            this.off('mousemove touchmove', move);
 
             // TODO
             // var shapes = this.getShapesByBox(selectionBox.getABox());
             // _.each(shapes, function(shape) { if (shape.select) shape.select(); });
             selectionBox.remove();
         };
-        this.on('mouseup', up);
-        this.on('mousemove', move);
+        this.on('mouseup touchend touchcancel', up);
+        this.on('mousemove touchmove', move);
     },
 
     /**
@@ -529,28 +529,6 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         }
 
         return connection;
-    },
-
-    /**
-     * @private
-     */
-
-    handleTextInput: function() {
-        if (!this.inputText) return;
-
-        var text = this.inputText.value;
-        if (text) {
-            this.modifiedLabel.setText(text);
-            this.modifiedLabel.textForm.parentNode.removeChild(this.modifiedLabel.textForm);
-            this.modifiedLabel.textForm = null;
-            this.modifiedLabel = null;
-            this.inputText = null;
-        }
-        if (this.repeatInputClick) {
-            this.repeatInputClick = false;
-        } else {
-            this.repeatInputClick = true;
-        }
     },
 
     /**
