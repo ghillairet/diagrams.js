@@ -708,12 +708,20 @@ var Figure = Ds.Figure = Ds.Element.extend({
     setValue: function(key, value) {
         if (_.has(this.defaults, key)) {
             this.attributes[key] = value;
-            if (key === 'width' || key === 'height') {
-                if (!this.attributes['min-' + key])
-                    this.attributes['min-' + key] = value;
-            }
+            this.setMinValues(key ,value);
             if (this.wrapper) this.wrapper.attr(key, value);
         }
+    },
+
+    /**
+     * @private
+     */
+
+    setMinValues: function(key, value) {
+        if ((key === 'width' || key === 'height') &&
+                !this.attributes['min' + key]) {
+                    this.attributes['min-' + key] = value;
+                }
     },
 
     render: function() {},
@@ -824,16 +832,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
         var shape = figure.shape;
         if (shape.connecting) return;
 
-        /**
-        if (arguments.length === 2) {
-            var x = arguments[0];
-            var y = arguments[1];
-            this.startMove();
-            this.set({ x: x, y: y });
-            this.endMove();
-            return control;
-        }
-        **/
         var position = figure.calculatePosition(dx, dy);
         figure.set({ x: position.x, y: position.y });
         figure.shape.renderEdges();
@@ -862,8 +860,25 @@ var Figure = Ds.Figure = Ds.Element.extend({
      * @private
      */
 
-    calculateX: function() {},
-    calculateY: function() {},
+    calculateX: function(dx) {
+        var bounds = this.bounds();
+        var limits = this.limits();
+        var x = this.wrapper.ox + dx;
+
+        return Math.min(Math.max(0, x), (limits.width - bounds.width));
+    },
+
+    /**
+     * @private
+     */
+
+    calculateY: function(dy) {
+        var bounds = this.bounds();
+        var limits = this.limits();
+        var y = this.wrapper.oy + dy;
+
+        return Math.min(Math.max(0, y), (limits.height - bounds.height));
+    },
 
     /**
      * @private
@@ -1010,7 +1025,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
                 return new fn(attrs);
             else return new Ds[fn](attrs);
         }
-        //    throw new Error('Cannot create figure for', figure);
     }
 
 });
@@ -1022,7 +1036,7 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Figure.apply(this, [attributes]);
-        this.defaults = Rectangle.defaults;
+        this.defaults = _.extend({}, Rectangle.defaults);
         this.attributes = _.extend({}, this.defaults, attributes.figure || attributes);
         this.initialize(attributes);
     },
@@ -1030,13 +1044,14 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     bounds: function() {
         if (this.wrapper)
             return this.wrapper.getABox();
-        else
+        else {
             return {
                 width: this.get('width'),
                 height: this.get('height'),
                 x: this.get('x'),
                 y: this.get('y')
             };
+        }
     },
 
     render: function() {
@@ -1092,30 +1107,6 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
         if (y < limits.y) y = limits.y;
 
         this.set({ width: w, height: h, y: y, x: x });
-    },
-
-    /**
-     * @private
-     */
-
-    calculateX: function(dx) {
-        var bounds = this.bounds();
-        var limits = this.limits();
-        var x = this.wrapper.ox + dx;
-
-        return Math.min(Math.max(0, x), (limits.width - bounds.width));
-    },
-
-    /**
-     * @private
-     */
-
-    calculateY: function(dy) {
-        var bounds = this.bounds();
-        var limits = this.limits();
-        var y = this.wrapper.oy + dy;
-
-        return Math.min(Math.max(0, y), (limits.height - bounds.height));
     },
 
     minimumSize: function() {
@@ -1355,11 +1346,37 @@ var Text = Ds.Text = Ds.Figure.extend({
 
     constructor: function(attributes) {
         if (!attributes) attributes = {};
+        var attrs = attributes.figure || attributes;
+
         Ds.Figure.apply(this, [attributes]);
+
         this.defaults = _.extend({}, Text.defaults, Text.textDefaults);
-        this.attributes = _.extend({}, this.defaults, this.textDefaults, attributes.figure || attributes);
-        this.position = Text.getPosition(this, attributes.figure);
+        this.attributes = _.extend({}, Text.defaults,
+            _.object(_.filter(_.pairs(attrs), this.filterAttributes)));
+        this.textAttributes = _.extend({}, Text.textDefaults,
+            _.object(_.filter(_.pairs(attrs), this.filterTextAttributes)));
+        this.position = Text.getPosition(this, attrs);
+
         this.initialize(attributes);
+    },
+
+    filterAttributes: function(pair) {
+        return _.has(Text.defaults, pair[0]);
+    },
+
+    /**
+     * @private
+     */
+
+    filterTextAttributes: function(pair) {
+        return _.has(Text.textDefaults, pair[0]);
+    },
+
+    get: function(attr) {
+        if (this.textAttributes[attr])
+            return this.textAttributes[attr];
+        else
+            return this.attributes[attr];
     },
 
     /**
@@ -1367,11 +1384,12 @@ var Text = Ds.Text = Ds.Figure.extend({
      */
 
     setValue: function(key, value) {
-        if (_.has(this.defaults, key)) {
+        if (_.has(this.textAttributes, key)) {
+            this.textAttributes[key] = value;
+            if (this.text) this.text.attr(key, value);
+        } else {
             this.attributes[key] = value;
-            if (this.text && _.contains(Text.textDefaults, key)) {
-                this.text.attr(key, value);
-            } else if (this.wrapper) {
+            if (this.wrapper) {
                 if (_.contains(['width', 'height', 'x', 'y'], key)) {
                     this.layoutText();
                 }
@@ -1383,6 +1401,7 @@ var Text = Ds.Text = Ds.Figure.extend({
     layoutText: function() {
         if (!this.text) return;
 
+        this.resizeBox();
         var box = this.bounds();
         var text = this.text;
         var lbox = text.getABox();
@@ -1415,20 +1434,34 @@ var Text = Ds.Text = Ds.Figure.extend({
         var renderer = this.renderer();
 
         this.wrapper = renderer.rect();
-        this.text = renderer.text(0, 0, this.get('text'));
+        this.text = renderer.text(0, 0, this.textAttributes.text);
+        this.text.attr(this.textAttributes);
 
-        var box = this.text.getBBox();
-        this.set('width', box.width);
-        this.set('height', box.height);
+        this.set({ x : this.get('x'), y: this.get('y') });
+        this.wrapper.attr(this.attributes).attr({
+            stroke: 'none',
+            'fill': 'white',
+            'fill-opacity': 0
+        });
 
-        this.wrapper.attr({ 'stroke': 'none', 'fill-opacity': 0, 'fill': 'none' });
-        this.set({x : this.get('x'), y: this.get('y') });
         this.layoutText();
         this.toFront();
         this.wrapper.control = this;
-        this.bindEvents(this.text);
+        this.bindEvents();
 
         return this;
+    },
+
+    /**
+     * @private
+     */
+
+    resizeBox: function() {
+        var box = this.text.getBBox();
+        var w = this.get('width');
+        var h = this.get('height');
+        if (w < box.width) this.set('width', box.width);
+        if (h < box.height) this.set('height', box.height);
     },
 
     remove: function() {
@@ -1451,26 +1484,38 @@ var Text = Ds.Text = Ds.Figure.extend({
     },
 
     toFront: function() {
-        this.wrapper.toFront();
+        if (!this.wrapper) return;
         this.text.toFront();
+        this.wrapper.toFront();
+    },
+
+    toBack: function() {
+        if (!this.wrapper) return;
+        this.text.toBack();
+        this.wrapper.toBack();
     }
 
 }, {
 
     textDefaults: {
-        'font-size': 10,
-        'text': 'Label',
-        'font-weight': 400,
-        'font-style': 'normal',
+        'font-size': 12,
+        text: 'Label',
+        'font-weight': 'normal', // normal | bold | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+        'font-style': 'normal', // normal | italic | oblique
         'font-family': 'Arial',
-        'fill': 'black'
+        fill: 'black',
+        'fill-opacity': 1,
+        stroke: 'none',
+        'stroke-opacity': 1,
+        'stroke-width': 1
     },
 
-    defaults: _.extend({}, Figure.defaults, {
+    defaults: {
         width: 0,
         height: 0,
-        stroke: 'none'
-    }),
+        x: 0,
+        y: 0
+    },
 
     positions: [ 'center', 'left', 'right' ],
 
@@ -1884,6 +1929,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         this._currentSource = null;
         this._currentEdge = null;
         this.isSelecting = false;
+        this.isDragging = false;
         this._handlers = [];
 
         this.set('edges', []);
@@ -1965,10 +2011,9 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         _.each(this.get('children'), function(child) { child.render(); });
         _.each(this.get('edges'), function(edge) { edge.render(); });
 
-        this.on('click', this.deselect, this);
-        this.on('click', this.handleTextInput, this);
         this.on('mousedown touchstart', this.changeViewBox);
-        this.on('mousedown', this.selectGroup);
+        this.on('mousedown touchstart', this.selectGroup);
+        this.on('click', this.deselect, this);
 
         return this;
     },
@@ -2069,7 +2114,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     changeViewBox: function(e) {
-        if (this.isSelecting) return;
+        if (!this.isDragging) return;
 
         var startPoint = Point.get(this, e),
             endPoint;
@@ -2087,11 +2132,11 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         var up = function(ee) {
             ee.stopImmediatePropagation();
             this.wrapper.toBack();
-            this.off('mouseup', up);
-            this.off('mousemove', move);
+            this.off('mouseup touchend touchcancel', up);
+            this.off('mousemove touchmove', move);
         };
-        this.on('mouseup', up);
-        this.on('mousemove', move);
+        this.on('mouseup touchend touchcancel', up);
+        this.on('mousemove touchmove', move);
     },
 
     /**
@@ -2149,16 +2194,16 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
             ee.stopImmediatePropagation();
             this.wrapper.toBack();
             this.isSelecting = false;
-            this.off('mouseup', up);
-            this.off('mousemove', move);
+            this.off('mouseup touchend touchcancel', up);
+            this.off('mousemove touchmove', move);
 
             // TODO
             // var shapes = this.getShapesByBox(selectionBox.getABox());
             // _.each(shapes, function(shape) { if (shape.select) shape.select(); });
             selectionBox.remove();
         };
-        this.on('mouseup', up);
-        this.on('mousemove', move);
+        this.on('mouseup touchend touchcancel', up);
+        this.on('mousemove touchmove', move);
     },
 
     /**
@@ -2362,28 +2407,6 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         }
 
         return connection;
-    },
-
-    /**
-     * @private
-     */
-
-    handleTextInput: function() {
-        if (!this.inputText) return;
-
-        var text = this.inputText.value;
-        if (text) {
-            this.modifiedLabel.setText(text);
-            this.modifiedLabel.textForm.parentNode.removeChild(this.modifiedLabel.textForm);
-            this.modifiedLabel.textForm = null;
-            this.modifiedLabel = null;
-            this.inputText = null;
-        }
-        if (this.repeatInputClick) {
-            this.repeatInputClick = false;
-        } else {
-            this.repeatInputClick = true;
-        }
     },
 
     /**
@@ -2781,7 +2804,11 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
                 x += cell.width + this.hgap;
             }, this);
 
-            var max = _.max(row.cells, function(cell) { return cell.height; });
+            var max = null;
+            if (row.cells.length) {
+                max = _.max(row.cells, function(cell) { return cell.height; });
+            }
+
             row.height = max ? max.height : 0;
             y += row.height + this.vgap;
             x = baseX;
@@ -3050,7 +3077,6 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
             elements = shape.children,
             l = elements.length, i = 0, el;
 
-        console.log('layout', this.shape, bounds);
         for (; i < l ; i++) {
             el = elements[i];
             el.figure.translate(bounds.x, bounds.y);
@@ -3063,15 +3089,15 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
      */
 
     minimumSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     },
 
     preferredSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     },
 
     maximumSize: function() {
-//        return this.shape.figure.bounds();
+        return this.shape.figure.bounds();
     }
 
 });
@@ -3571,25 +3597,37 @@ var LabelImage = Ds.Image = Ds.DiagramElement.extend({
  */
 
 var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
+    resizable: false,
+    editable: true,
+    draggable: true,
 
     constructor: function(attributes) {
+        if (!attributes) attributes = {};
         Ds.LayoutElement.apply(this, [attributes]);
-
-        this.resizable = attributes.resizable || false;
-        if (_.isBoolean(attributes.draggable))
-            this.draggable = attributes.draggable;
-        this.editable = attributes.editable || true;
-
-        this.xOffset = 5;
-        this.yOffset = 5;
-
+        this.initProperties(attributes);
         var image = this.figure ? this.figure.image : attributes.figure.image;
         if (image) this.setImage(image);
 
         this.initialize(attributes);
     },
 
-    // Should be only one image.
+    /**
+     * @private
+     */
+
+    initProperties: function(attributes) {
+        var properties = ['resizable', 'editable', 'draggable'];
+        var setBoolean = function(property) {
+            if (_.isBoolean(attributes[property])) {
+                this[property] = attributes[property];
+            }
+        };
+        _.each(properties, setBoolean, this);
+    },
+
+    /**
+    */
+
     setImage: function(attributes) {
         attributes.parent = this;
         var image = new Ds.Image( attributes );
@@ -3597,30 +3635,49 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         return image;
     },
 
+    /**
+     * Renders the Label on the canvas.
+     */
+
     render: function() {
         this.figure.render();
         this.figure.toFront();
 
         if (this.image) this.image.render();
         if (this.editable) this.asEditable();
-
-//        if (this.draggable) this.asDraggable();
+        if (this.draggable) this.figure.asDraggable();
 
         return this;
     },
 
-    setText: function( text, silent ) {
+    /**
+     * Sets the text. It will trigger a
+     * change:text event unless the silent
+     * argument is set to false.
+     *
+     * @param {string} text
+     * @param {boolean} silent event
+     */
+
+    setText: function(text, silent) {
         this.set('text', text);
         this.doLayout();
-
-        if (!silent) {
-            this.trigger('change:text', this);
-        }
+        if (!silent) this.trigger('change:text', this);
     },
+
+    /**
+     * Returns the text value.
+     *
+     * @return {string}
+     */
 
     getText: function() {
         return this.get('text');
     },
+
+    /**
+     * Removes the Label from the canvas.
+     */
 
     remove: function() {
         if (this.image) {
@@ -3630,6 +3687,10 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
             this.figure.remove();
         }
     },
+
+    removeContent: function() {},
+    renderEdges: function() {},
+    renderContent: function() {},
 
     doLayout: function() {
         if (this.figure) this.figure.layoutText();
@@ -3651,63 +3712,64 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
         return this.figure.minimumSize();
     },
 
+    /**
+     * @private
+     */
+
     asEditable: function() {
         var node = this;
-
-        if (!node.label) return;
-
-        var createInputTextForm = function( node ) {
-            var aBox = node.label.getABox(),
-                pBox = node.wrapper.getABox(),
+        var diagram = node.diagram;
+        var createInputTextForm = function(node) {
+            var box = node.bounds(),
                 px = node.diagram.el.offsetLeft,
                 py = node.diagram.el.offsetTop,
-                x = aBox.x + (isNaN(px) ? 0 : px),
-                y = aBox.y + (isNaN(py) ? 0 : py),
-                w = pBox.width,
-                h = aBox.height + 4;
+                x = box.x + (isNaN(px) ? 0 : px),
+                y = box.y + (isNaN(py) ? 0 : py),
+                w = box.width,
+                h = box.height,
+                id = 'form-input-' + node.get('id');
 
-            var txt = node.textForm = document.createElement('form');
-            txt.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
-
+            var form = document.getElementById(id);
+            if (form) {
+                form.parentNode.removeChild(form);
+            }
+            form = document.createElement('form');
             var inputForm = document.createElement('input');
+
+            form.setAttribute('id', id);
+            form.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
             inputForm.setAttribute('type', 'text');
-            inputForm.value = node.get('text');
-            inputForm.setAttribute('style', 'padding: 0; width:' + w + 'px; height: ' + h + 'px; z-index: 1;');
-            txt.appendChild(inputForm);
+            inputForm.value = node.getText() || '';
+            inputForm.setAttribute('style', 'width:' + w + 'px; height: ' + h + 'px;');
+            form.appendChild(inputForm);
 
-            return { form: txt, input: inputForm };
+            return { form: form, input: inputForm };
         };
+        var handleTextInput = function(e) {
+            e.stopImmediatePropagation();
+            if (!node.el) return;
+            var text = node.el.input.value;
+            node.setText(text);
 
-        var remove = function( node ) {
-            if (node && node.parentNode) {
-                node.parentNode.removeChild( node );
-            }
+            node.el.form.removeEventListener('blur', handleTextInput, true);
+            node.el.form.parentNode.removeChild(node.el.form);
+            delete node.el;
+            delete node.domNode;
         };
-
-        node.label.on('dblclick', function(event) {
-            var ml = node.diagram.modifiedLabel;
-            if (ml && ml !== node) {
-                remove(node.diagram.inputText);
-                remove(node.diagram.modifiedLabel.textForm);
-            }
-
-            if (node.textForm) {
-                remove(node.textForm);
-            }
-
+        node.on('dblclick', function(e) {
+            e.stopImmediatePropagation();
             var el = createInputTextForm( node );
-
-            node.textForm = el.form;
-            node.diagram.inputText = el.input;
-            node.diagram.modifiedLabel = node;
-
-            node.diagram.el.parentNode.appendChild(el.form);
+            node.el = el;
+            node.domNode = node.diagram.el.parentNode;
+            node.domNode.appendChild(el.form);
+            node.el.form.focus();
+            node.el.form.addEventListener('blur', handleTextInput, true);
         });
     }
 
 });
 
-_.extend(Ds.Label.prototype, Ds.Draggable, Ds.Events);
+_.extend(Ds.Label.prototype, Ds.Selectable, Ds.Resizable, Ds.Events);
 
 
 
