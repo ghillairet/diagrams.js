@@ -1,5 +1,15 @@
-Diagrams.js - Javascript Diagramming Library
 
+ ____
+/\  _`\   __                                                         __
+\ \ \/\ \/\_\     __       __   _ __    __      ___ ___     ____    /\_\    ____
+ \ \ \ \ \/\ \  /'__`\   /'_ `\/\`'__\/'__`\  /' __` __`\  /',__\   \/\ \  /',__\
+  \ \ \_\ \ \ \/\ \L\.\_/\ \L\ \ \ \//\ \L\.\_/\ \/\ \/\ \/\__, `\__ \ \ \/\__, `\
+   \ \____/\ \_\ \__/.\_\ \____ \ \_\\ \__/.\_\ \_\ \_\ \_\/\____/\_\_\ \ \/\____/
+    \/___/  \/_/\/__/\/_/\/___L\ \/_/ \/__/\/_/\/_/\/_/\/_/\/___/\/_/\ \_\ \/___/
+                           /\____/                                  \ \____/
+                           \_/__/                                    \/___/
+
+Diagrams.js - Javascript Diagramming Library
 
 ## License
 This software is distributed under the terms of the Eclipse Public License 1.0 - http://www.eclipse.org/legal/epl-v10.html.

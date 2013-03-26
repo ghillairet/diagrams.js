@@ -56,9 +56,7 @@ module.exports = function(grunt) {
         },
 
         mocha: {
-
             all: [ 'test/test.html' ]
-
         },
 
         jsdoc: {
@@ -68,10 +66,11 @@ module.exports = function(grunt) {
             }
         },
 
-        min: {
+        uglify: {
             dist: {
-                src: ['dist/diagrams.js'],
-                dest: 'dist/diagrams.min.js'
+                files: {
+                    'dist/diagrams.min.js': ['dist/diagrams.js']
+                }
             }
         }
 
@@ -79,9 +78,11 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-mocha');
     grunt.loadNpmTasks('grunt-jsdoc-plugin');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-concat');
 
-    grunt.registerTask('test', 'concat mocha');
-    grunt.registerTask('build', 'concat min');
-    grunt.registerTask('doc', 'jsdoc');
-
+    grunt.registerTask('test', ['concat', 'mocha']);
+    grunt.registerTask('build', ['concat', 'uglify']);
+    grunt.registerTask('doc', ['jsdoc']);
 };
