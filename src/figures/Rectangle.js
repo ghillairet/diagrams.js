@@ -78,14 +78,9 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     },
 
     minimumSize: function() {
-        var width = this.get('min-width');
-        var height = this.get('min-height');
-        if (!width) width = this.get('width');
-        if (!height) height = this.get('height');
-
         return {
-            width: width,
-            height: height
+            width: this.get('min-width') || this.get('width'),
+            height: this.get('min-height') || this.get('height')
         };
     }
 

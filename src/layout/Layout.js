@@ -17,7 +17,6 @@ Layout.layouts = function() {
         'flow': FlowLayout,
         'grid': GridLayout,
         'border': BorderLayout
-//        'flex': FlexGridLayout
     };
 };
 

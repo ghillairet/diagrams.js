@@ -55,8 +55,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         if (!attributes) attributes = {};
         Ds.DiagramElement.apply(this, [attributes]);
 
-        this.ins = [];
-        this.outs = [];
+        this.attributes.ins = [];
+        this.attributes.outs = [];
 
         if (_.isBoolean(attributes.draggable))
             this.draggable = attributes.draggable;
@@ -67,22 +67,13 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         if (_.isBoolean(attributes.showBoundBox))
             this.showBoundBox = attributes.showBoundBox;
 
-        if (attributes.children) {
-            this.children = attributes.children;
-        }
-
-        this.setUpChildren();
+        this.setUpChildren(attributes.children || this.children);
         this.setUpLayout(attributes);
         this.setUpStyles(attributes);
         this.setUpToolBox();
         this.setUpBoundBox();
 
         this.initialize.apply(this, arguments);
-
-        if (this.diagram && !this.parent) {
-            this.diagram.get('children').push(this);
-            this.diagram.trigger('add:children', this);
-        }
     },
 
     /**
@@ -126,10 +117,10 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         this.figure.render();
         this.renderContent();
 
-        this.on('click', this.select);
-        this.on('click', this.showTool);
-        this.on('mousedown', this.handleClick);
-        this.on('mouseout', this.removeToolWhenOut);
+        this.on('touchstart click', this.select);
+        this.on('touchstart click', this.showTool);
+        this.on('touchstart mousedown', this.handleClick);
+        this.on('touchend mouseout', this.removeToolWhenOut);
 
         if (this.draggable) this.asDraggable();
 
@@ -142,7 +133,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
 
         var me = this;
         me.connecting = true;
-        var connection = new connectionType({ diagram: me.diagram });
+        var connection = new connectionType();
+        me.diagram.add(connection);
         connection.connectByDragging(me, e);
         connection.render();
         var end = function() {
@@ -183,9 +175,9 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         this.deselect();
 
         this.figure.remove();
-        _.each(this.children, function(c) { c.remove(); });
-        _.each(this.ins, function(e) { e.remove(diagram); });
-        _.each(this.outs, function(e) { e.remove(diagram); });
+        _.each(this.get('children'), function(c) { c.remove(); });
+        _.each(this.get('ins'), function(e) { e.remove(diagram); });
+        _.each(this.get('outs'), function(e) { e.remove(diagram); });
 
         // remove shadow if present.
         if (this.shadow) {
@@ -219,10 +211,10 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
         if (!connection) return this;
 
         if (direction && (direction === 'in' || direction === 'out')) {
-            this[direction+'s'] = _.without(this[direction+'s'], connection);
+            this.set([direction+'s'], _.without(this[direction+'s'], connection));
         } else {
-            this.ins = _.without(this.ins, connection);
-            this.outs = _.without(this.outs, connection);
+            this.set('ins', _.without(this.ins, connection));
+            this.set('outs', _.without(this.outs, connection));
         }
 
         return this;
@@ -239,19 +231,6 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
 
     canConnect: function(connection) {
         return true;
-    },
-
-    /**
-     * Add a child Shape
-     *
-     * @param Shape
-     */
-
-    add: function(shape) {
-        shape.setParent(this);
-        this.children.push(shape);
-        this.trigger('add:children', shape);
-        return this;
     },
 
     /**
@@ -276,32 +255,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      * @private
      */
 
-    setUpChildren: function() {
-        var children = this.children,
-            shape;
-
-        this.children = [];
-
-        _.each(children, function(child) {
-            if (isLabel(child)) {
-                shape = new Label(child);
-            } else if (isImage(child)) {
-                shape = new Ds.Image(child);
-            } else if (typeof child === 'function') {
-                shape = new child({ parent: this });
-            } else if (typeof child === 'object') {
-                shape = new Shape(child);
-            }
-            if (shape) this.add(shape);
-        }, this);
-    },
-
-    /**
-     * @private
-     */
-
     removeContent: function() {
-        _(this.children).each(function(c) { c.remove(); });
+        _.each(this.attributes.children, function(c) { c.remove(); });
     },
 
     /**
@@ -309,9 +264,7 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderContent: function() {
-        _(this.children).each(function(c) {
-            c.render();
-        });
+        _.each(this.attributes.children, function(c) { c.render(); });
         if (!this.parent) { this.doLayout(); }
     },
 
@@ -320,8 +273,8 @@ var Shape = Ds.Shape = Ds.LayoutElement.extend(/** @lends Shape.prototype */ {
      */
 
     renderEdges: function() {
-        _(this.ins).each(function(i) { i.render(); });
-        _(this.outs).each(function(o) { o.render(); });
+        _.each(this.attributes.ins, function(i) { i.render(); });
+        _.each(this.attributes.outs, function(o) { o.render(); });
     },
 
 

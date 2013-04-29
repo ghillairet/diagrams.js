@@ -17,6 +17,10 @@ var Text = Ds.Text = Ds.Figure.extend({
         this.initialize(attributes);
     },
 
+    /**
+     * @private
+     */
+
     filterAttributes: function(pair) {
         return _.has(Text.defaults, pair[0]);
     },
@@ -47,13 +51,17 @@ var Text = Ds.Text = Ds.Figure.extend({
         } else {
             this.attributes[key] = value;
             if (this.wrapper) {
+                this.wrapper.attr(key, value);
                 if (_.contains(['width', 'height', 'x', 'y'], key)) {
                     this.layoutText();
                 }
-                this.wrapper.attr(key, value);
             }
         }
     },
+
+    /**
+     * @private
+     */
 
     layoutText: function() {
         if (!this.text) return;
@@ -73,16 +81,6 @@ var Text = Ds.Text = Ds.Figure.extend({
         }
         if (this.position === 'right') {
             text.attr('x', box.xRight - (lbox.width / 2));
-        }
-    },
-
-    setPosition: function() {
-        if (this.text) {
-            this.wrapper.attr({ x: this.get('x'), y: this.get('y') });
-            var bbox = this.text.getBBox();
-            var x = this.get('x') + (bbox.width / 2);
-            var y = this.get('y') + (bbox.height / 2);
-            this.text.attr({ x: x, y: y });
         }
     },
 

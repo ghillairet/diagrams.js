@@ -11,7 +11,6 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
         Ds.DiagramElement.apply(this, [attributes]);
 
         this.connection = attributes.connection;
-        this.diagram = this.connection.diagram;
     },
 
     bounds: function() {
@@ -48,7 +47,7 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
     render: function() {
         if (this.wrapper) return this;
 
-        var paper = this.paper();
+        var paper = this.connection.renderer();
         this.wrapper = paper.rect( this.x - 3, this.y - 3, 6, 6 );
         this.wrapper.attr({ fill: 'black', stroke: 'none' });
         this.wrapper.anchor = this;
@@ -69,7 +68,8 @@ var ConnectionAnchor = Ds.ConnectionAnchor = Ds.DiagramElement.extend(/** @lends
         var anchor = this;
         var wrapper = this.wrapper;
         var connection = this.connection;
-        var foundShapes = this.diagram.getShapesByPoint(this.x, this.y);
+        var diagram = connection.diagram;
+        var foundShapes = diagram.getShapesByPoint(this.x, this.y);
 
         var connectable = function(memo, shape) {
             if (connection.canConnect(shape, anchor.position()))

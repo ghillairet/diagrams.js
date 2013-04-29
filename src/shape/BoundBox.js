@@ -33,7 +33,7 @@ Ds.BoundBox = Ds.DiagramElement.extend(/** @lends BoundBox.prototype */ {
     render: function() {
         this.remove();
 
-        var paper = this.control.paper();
+        var paper = this.control.renderer();
         var bounds = this.control.bounds();
         var x = bounds.xRight + 15;
         var y = bounds.yMiddle;

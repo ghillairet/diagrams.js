@@ -41,25 +41,32 @@
  *
  */
 
-Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
+Ds.Diagram = Ds.DiagramElement.extend(/** @lends Diagram.prototype */ {
 
     constructor: function(attributes) {
         if (!attributes) attributes = {};
-        Ds.Element.apply(this, [attributes]);
+        Ds.DiagramElement.apply(this, [attributes]);
 
-        this._selection = null;
-        this._currentSource = null;
-        this._currentEdge = null;
-        this.isSelecting = false;
-        this.isDragging = false;
-        this._handlers = [];
-
-        this.set('edges', []);
+        this.attributes.selection = [];
+        this.attributes.currentSource = null;
+        this.attributes.currentEdge = null;
+        this.attributes.isSelecting = false;
+        this.attributes.isDragging = false;
+        this.attributes.children = [];
+        this.attributes.edges = [];
 
         if (attributes.el) this.el = attributes.el;
         if (this.el) this.setElement(this.el);
 
+        this.setFigure(this.figure);
         this.initialize(attributes);
+    },
+
+    figure: {
+        type: 'rect',
+        fill: 'white',
+        'opacity': 0,
+        'stroke': 'none'
     },
 
     /**
@@ -71,7 +78,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      * @returns {Raphael}
      */
 
-    paper: function() {
+    renderer: function() {
         if (!this._paper) this._initPaper();
         return this._paper;
     },
@@ -115,69 +122,24 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     render: function() {
-        // Insures the Raphael object is ready.
-        var paper = this.paper();
+        var paper = this.renderer();
         var canvas = paper.canvas;
         var x = canvas.clientLeft;
         var y = canvas.clientTop;
         var width = canvas.width.baseVal.value;
         var height = canvas.height.baseVal.value;
 
-        if (this.wrapper) this.wrapper.remove();
-        // creates wrapper that will receive events
-        this.wrapper = this.paper().rect(x, y, width, height, 0).attr({
-            fill: 'white', opacity: 0, stroke: 'none'
-        });
+        this.set({ x: x, y: y, width: width, height: height });
+        this.figure.render();
 
-        this.bindEvents();
-        _.each(this.get('children'), function(child) { child.render(); });
-        _.each(this.get('edges'), function(edge) { edge.render(); });
+        _.each(this.attributes.children, function(child) { child.render(); });
+        _.each(this.attributes.edges, function(edge) { edge.render(); });
 
-        this.on('mousedown touchstart', this.changeViewBox);
-        this.on('mousedown touchstart', this.selectGroup);
-        this.on('click', this.deselect, this);
+        this.on('touchstart mousedown', this.changeViewBox);
+        this.on('touchstart mousedown', this.selectGroup);
+        this.on('touchstart click', this.deselect, this);
 
         return this;
-    },
-
-    _events: [
-        'click', 'dblclick',
-        'mouseout', 'mouseup',
-        'mouseover', 'mousedown',
-        'mousemove', 'touchstart',
-        'touchmove', 'touchend',
-        'touchcancel'
-    ],
-
-    /**
-     * @private
-     */
-
-    bindEvents: function() {
-        var diagram = this;
-        var wrapper = this.wrapper;
-        var createHandler = function(eve) {
-            return {
-                eve: eve,
-                handler: function(e) { diagram.trigger(eve, e); }
-            };
-        };
-        var bind = function(call) { wrapper[call.eve](call.handler); };
-
-        this._handlers = _.map(this._events, createHandler);
-        _.each(this._handlers, bind);
-    },
-
-    /**
-     * @private
-     */
-
-    unBindEvents: function() {
-        var wrapper = this.wrapper;
-        var unbind = function(call) { wrapper['un' + call.eve](call.handler); };
-
-        _.each(this._handlers, unbind);
-        this._handlers.length = 0;
     },
 
     /**
@@ -206,9 +168,9 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     zoom: function(factor) {
-        var x = this.wrapper.attr('x');
-        var y = this.wrapper.attr('y');
-        var paper = this.paper();
+        var x = this.get('x');
+        var y = this.get('y');
+        var paper = this.renderer();
         var width = this._paper.width = paper.width + factor;
         var height = this._paper.height = paper.height + factor;
 
@@ -224,8 +186,8 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
 
     remove: function() {
         if (this._paper) {
-            _.each(this.get('children'), function(child) { child.remove(); });
-            _.each(this.get('edges'), function(child) { child.remove(); });
+            _.each(this.attributes.children, function(child) { child.remove(); });
+            _.each(this.attributes.edges, function(child) { child.remove(); });
             this._paper.remove();
             this._paper = null;
         }
@@ -236,24 +198,24 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     changeViewBox: function(e) {
-        if (!this.isDragging) return;
+        if (!this.get('isDragging')) return;
 
         var startPoint = Point.get(this, e),
             endPoint;
 
-        this.wrapper.toFront();
+        this.toFront();
         var move = function(ee) {
-            var wp = new Point(this.wrapper.attr('x'), this.wrapper.attr('y'));
+            var wp = new Point(this.get('x'), this.get('y'));
             ee.stopImmediatePropagation();
             endPoint = Point.get(this, ee);
             wp.sub(startPoint.vector(endPoint));
-            this.wrapper.attr(wp);
+            this.set(wp);
             this.setViewBox(wp.x, wp.y);
             startPoint = endPoint;
         };
         var up = function(ee) {
             ee.stopImmediatePropagation();
-            this.wrapper.toBack();
+            this.toBack();
             this.off('mouseup touchend touchcancel', up);
             this.off('mousemove touchmove', move);
         };
@@ -266,10 +228,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     selectGroup: function(e) {
-        if (!this.isSelecting) return;
+        if (!this.get('isSelecting')) return;
 
         var startPoint = Point.get(this, e);
-        var selectionBox = this.paper().rect(startPoint.x, startPoint.y, 0, 0);
+        var selectionBox = this.renderer().rect(startPoint.x, startPoint.y, 0, 0);
         var endPoint, box, dx, dy, ow, w, oh, h;
         selectionBox.attr({
             'fill-opacity': 0.15,
@@ -328,26 +290,30 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         this.on('mousemove touchmove', move);
     },
 
-    /**
-     * Creates a Shape and add it as children of the diagram.
-     *
-     * @param {function} Shape constructor
-     * @param {object} Shape options
-     * @return {Shape}
-     */
+    add: function() {
+        if (!arguments.length) return this;
 
-    createShape: function(func, attributes) {
-        var shape = null;
-        var attrs = attributes || {};
+        var addShape = function(shape, dia) {
+            if (shape.id && !dia.getShape(shape.id)) {
+                dia.get('children').push(shape);
+                shape.setDiagram(dia);
+                dia.trigger('add:children', shape);
+            }
+        };
+        var addConnection = function(conn, dia) {
+            if (conn.id && !dia.getConnection(conn.id)) {
+                dia.get('edges').push(conn);
+                conn.setDiagram(dia);
+                dia.trigger('add:connection', conn);
+            }
+        };
+        _.each(arguments, function(arg) {
+            if (arg instanceof Ds.Shape) addShape(arg, this);
+            else if (arg instanceof Ds.Label) addShape(arg, this);
+            else if (arg instanceof Ds.Connection) addConnection(arg, this);
+        }, this);
 
-        if (!func) {
-            throw new Error('Cannot create Shape if Shape constructor is missing.');
-        }
-
-        attrs.diagram = this;
-        shape = new func(attrs);
-
-        return shape;
+        return this;
     },
 
     /**
@@ -361,9 +327,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
         if (!shape) return;
 
         var children = this.get('children');
-        this.set('children', _.reject(children, function(child) {
+        var reject = function(child) {
             return child === shape;
-        }));
+        };
+        this.set('children', _.reject(children, reject));
         this.trigger('remove:children', shape);
     },
 
@@ -377,11 +344,10 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     getShape: function(id) {
         if (!id) return null;
 
-        var shape = _.find(this.get('children'), function(child) {
-            return child.get('id') === id;
-        });
-
-        return shape;
+        var find = function(child) {
+            return child.id === id;
+        };
+        return _.find(this.get('children'), find);
     },
 
     /**
@@ -426,37 +392,6 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     },
 
     /**
-     * Creates a Connection and add it to the diagram. The options
-     * argument can contain the source and target Shape.
-     *
-     * @param {function} Connection constructor
-     * @param {object} Connection options
-     * @return {Connection}
-     */
-
-    createConnection: function(func, attributes) {
-        if (typeof func !== 'function') return;
-
-        var connection = null,
-            attrs = attributes || {},
-            source = attrs.source,
-            target = attrs.target;
-
-        attrs.diagram = this;
-        connection = new func( attrs );
-
-        if (source && target) {
-            connection.connect(source, target);
-        }
-
-        connection.on('remove:source remove:target', function(connection) {
-            this.removeConnection( connection );
-        }, this);
-
-        return connection;
-    },
-
-    /**
      * Removes the Connection from the diagram.
      *
      * @param {Connection}
@@ -465,11 +400,11 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     removeConnection: function(connection) {
         if (!connection) return;
 
-        var edges = this.get('edges');
-        this.set('edges', _.reject(edges, function( edge ) {
+        var edges = this.edges;
+        var reject = function(edge) {
             return edge === connection;
-        }));
-
+        };
+        this.set('edges', _.reject(edges, reject));
         this.trigger('remove:edges', connection);
     },
 
@@ -483,62 +418,26 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
     getConnection: function(id) {
         if (!id) return null;
 
-        var connection = _.find(this.get('edges'), function(child) {
-            var childID = child.get('id');
-            if (childID) {
-                return childID === id;
-            }
-        });
-
-        return connection;
-    },
-
-    /**
-     * @private
-     */
-
-    canConnect: function(node) {
-        if (this.currentEdge) {
-            if (this.currentSource) {
-                return true;
-            } else {
-                this.currentSource = node;
-                return false;
-            }
-        } else {
-            return false;
-        }
-    },
-
-    /**
-     * @private
-     */
-
-    connect: function(node) {
-        var connection = null;
-
-        if (this.currentEdge) {
-            if (this.currentSource) {
-                connection = this.createConnection(this.currentEdge, {
-                    source: this.currentSource,
-                    target: node
-                });
-                this.currentEdge = null;
-                this.currentSource = null;
-            }
-        }
-
-        return connection;
+        var find = function(child) {
+            return child.id === id;
+        };
+        return _.find(this.get('edges'), find);
     },
 
     /**
      * Deselects all currently selected Shapes or Connections.
      */
 
-    deselect: function() {
-        if (this._selection && typeof this._selection.deselect === 'function') {
-            this._selection.deselect();
-            delete this._selection;
+    deselect: function(element) {
+        var selection = this.get('selection');
+        if (this.isSelectable(element)) {
+            element.deselect();
+            this.set('selection', _.without(selection, element));
+        } else {
+            _.each(selection, function(selected) {
+                selected.deselect();
+            });
+            selection.length = 0;
         }
     },
 
@@ -549,11 +448,27 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     setSelection: function(element) {
-        if (this._selection) {
-            this._selection.deselect();
+        if (this.isSelectable(element)) {
+            this.deselect();
+            this.get('selection').push(element);
+            this.trigger('select', element);
         }
-        this._selection = element;
-        this.trigger('select', element);
+        return this;
+    },
+
+    addSelection: function(element) {
+        if (this.isSelectable(element)) {
+            this.get('selection').push(element);
+        }
+        return this;
+    },
+
+    /**
+     * @private
+     */
+
+    isSelectable: function(element) {
+        return element && typeof element.deselect === 'function';
     },
 
     /**
@@ -563,19 +478,7 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     getSelection: function() {
-        return this._selection;
-    },
-
-    parse: function(data) {
-
-    },
-
-    /**
-     * Returns JSON representation of the diagram.
-     */
-
-    toJSON: function() {
-
+        return this.get('selection');
     },
 
     /**
@@ -583,26 +486,21 @@ Ds.Diagram = Ds.Element.extend(/** @lends Diagram.prototype */ {
      */
 
     _initPaper: function() {
-        if (!this.el) {
-            throw new Error('Cannot initialize Raphael Object, ' +
-                    'Diagram Element is missing, use setElement() before.');
-        }
-
         if (this._paper) return;
+        if (!this.el) {
+            throw new Error('Diagram element is missing, use setElement()');
+        }
 
         this._paper = Raphael(this.el, this.width, this.height);
         this.setViewBox(0, 0, this._paper.width, this._paper.height);
     },
 
-    /**
-     * @private
-     */
+    toFront: function() {
+        this.figure.toFront();
+    },
 
-    _canCreate: function( func ) {
-        var child = _.find(this.children, function(c) {
-            return c === func;
-        });
-        return child !== undefined;
+    toBack: function() {
+        this.figure.toBack();
     }
 
 });

@@ -12,10 +12,8 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
         if (!attributes) attributes = {};
         Ds.Element.apply(this, [attributes]);
 
-        this.parent = attributes.parent || undefined;
-        this.diagram = this.parent ? this.parent.diagram : attributes.diagram;
-
-        this.set('id', attributes.id || _.uniqueId());
+        this.id = attributes.id || _.uniqueId();
+        this.attributes.children = [];
         this.setFigure(attributes.figure || this.figure);
         this.set(attributes);
     },
@@ -48,14 +46,13 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      * Returns the Raphael instance for this DiagramElement
      */
 
-    paper: function() {
-        if (!this.diagram && this.parent) {
-            this.diagram = this.parent.diagram;
-        }
-        if (!this.diagram) {
-            throw new Error('Element must be associated to a diagram');
-        }
-        return this.diagram.paper();
+    renderer: function() {
+        var diagram = this.diagram;
+        if (diagram)
+            return diagram.renderer();
+        else if (this.parent)
+            return this.parent.renderer();
+        else return null;
     },
 
     get: function(key) {
@@ -90,12 +87,54 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
         return this;
     },
 
+    /**
+     * Add a child Shape
+     *
+     * @param Shape
+     */
+
+    add: function(shape) {
+        shape.setParent(this);
+        this.get('children').push(shape);
+        this.trigger('add:children', shape);
+        return this;
+    },
+
+    /**
+     * @private
+     */
+
+    setUpChildren: function(children) {
+        var createShape = function(child) {
+            if (isLabel(child)) {
+                this.add(new Label(child));
+            } else if (typeof child === 'function') {
+                this.add(new child());
+            } else if (typeof child === 'object') {
+                this.add(new Shape(child));
+            }
+        };
+
+        _.each(children, createShape, this);
+    },
+
+    /**
+     * @private
+     */
+
     setParent: function(parentShape) {
         this.parent = parentShape;
-        if (!this.diagram) {
-            this.diagram = parentShape.diagram;
-        }
+        this.setDiagram(parentShape.diagram);
         return this;
+    },
+
+    /**
+     * @param {Diagram}
+     */
+
+    setDiagram: function(diagram) {
+        this.diagram = diagram;
+        _.each(this.get('children'), function(c) { c.setDiagram(diagram); });
     },
 
     /**
@@ -122,7 +161,7 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
 
     toFront: function() {
         if (this.figure) this.figure.toFront();
-        _.each(this.children, function(child) { child.toFront(); });
+        _.each(this.get('children'), function(child) { child.toFront(); });
         return this;
     },
 
@@ -131,22 +170,30 @@ var DiagramElement = Ds.DiagramElement = Ds.Element.extend(/** @lends DiagramEle
      */
 
     toBack: function() {
-        _.each(this.children, function(child) { child.toBack(); });
-        if (this.figure) this.figure.toBack();
+        _.each(this.get('children'), function(child) { child.toBack(); });
+        if (this.figure)
+            this.figure.toBack();
         return this;
     },
+
+    /**
+     * Returns true if the point is inside
+     * the DiagramElement's bounds.
+     *
+     * @param {Point}
+     */
 
     isPointInside: function(point) {
         if (!this.figure)
             return false;
-        return this.figure.isPointInside(point);
+        else return this.figure.isPointInside(point);
     },
 
     getByPoint: function(point) {
         var result = [];
         if (this.isPointInside(point)) {
             result.push(this);
-            result.push(_.map(this.children, function(c) {
+            result.push(_.map(this.get('children'), function(c) {
                 return c.getByPoint(point);
             }));
         }

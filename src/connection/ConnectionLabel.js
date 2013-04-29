@@ -35,7 +35,7 @@ var ConnectionLabel = Ds.ConnectionLabel = Ds.DiagramElement.extend(/** @lends C
 
     render: function() {
         this.remove();
-        var paper = this.paper(),
+        var paper = this.renderer(),
             connection = this.connection,
             wrapper = this.wrapper = paper.text(0, 0, this.get('text'));
 

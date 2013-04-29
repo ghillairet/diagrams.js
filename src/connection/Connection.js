@@ -8,6 +8,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     toolbox: true,
 
     constructor: function(attributes) {
+        if (!attributes) attributes = {};
         Ds.DiagramElement.apply(this, [attributes]);
 
         this.set('sourceAnchor', new ConnectionAnchor({ connection: this }));
@@ -21,13 +22,12 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
                 text: label.text
         });}, this);
         */
-        this.labels = [];
+//        this.labels = [];
 
         if (this.toolbox) this._tool = new ToolBox({ element: this });
 
-        if (this.diagram) {
-            this.diagram.get('edges').push(this);
-            this.diagram.trigger('add:edges', this);
+        if (attributes.source && attributes.target) {
+            this.connect(attributes.source, attributes.target);
         }
 
         this.initialize.apply(this, arguments);
@@ -88,7 +88,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     },
 
     renderConnectionEnd: function(boxes, points) {
-        var paper = this.paper();
+        var paper = this.renderer();
         var sbox = boxes[0];
         var tbox = boxes[1];
         var sPoint = points[0];
@@ -128,7 +128,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
 
     createPath: function() {
         var paths = path(this.get('sourceAnchor'), this.get('targetAnchor'), this.vertices, false),
-            paper = this.paper();
+            paper = this.renderer();
 
         this.wrapper = paper.path(paths.join(' '));
         this.wrapper.attr(this.attributes);
@@ -145,7 +145,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
      */
 
     createEventPath: function(paths) {
-        var paper = this.paper();
+        var paper = this.renderer();
         // Dummy is a larger line receiving clicks from users
         this.dummy = paper.path(paths.join(' '));
         this.dummy.connection = this;
@@ -275,8 +275,8 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         tgt.trigger('connect:target', this);
         this.trigger('connect');
 
-        src.outs.push(this);
-        tgt.ins.push(this);
+        src.get('outs').push(this);
+        tgt.get('ins').push(this);
 
         return this;
     },
@@ -303,14 +303,14 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
 
     connectByDragging: function(source, e) {
         var diagram = this.diagram;
-        var paper = diagram.paper();
+        var paper = diagram.renderer();
         var connection = this;
         var dragger = this.dragger = this.get('targetAnchor');
         var draggerPoint = Point.get(paper, e);
 
         this.set('source', source);
         this.get('sourceAnchor').attach(source);
-        source.outs.push(this);
+        source.get('outs').push(this);
 
         this.state = 'dragging';
         this.dragger.move(draggerPoint);
@@ -327,10 +327,10 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
                 dragger.establishConnection(underShape);
                 diagram.off('mouseup', onup);
                 diagram.off('mousemove', onmove);
-                diagram.wrapper.toBack();
+                diagram.toBack();
             }
         };
-        diagram.wrapper.toFront();
+        diagram.toFront();
         diagram.on('mousemove', onmove);
         diagram.on('mouseup', onup);
     },
@@ -348,16 +348,9 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
         clone.source = this.get('source').get('id');
         clone.target = this.get('target').get('id');
         clone.type = this.get('type');
-        clone.id = this.get('id');
+        clone.id = this.id;
         clone.sourceAnchor = this.get('sourceAnchor');
         clone.targetAnchor = this.get('targetAnchor');
-        clone.x = this.get('x');
-        clone.y = this.get('y');
-
-        if (this.wrapper) {
-            clone.attr = this.wrapper.attr();
-        }
-
         return clone;
     },
 
@@ -365,7 +358,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     // during a drag state returns the dragged anchor ABox.
 
     getBoxes: function() {
-        var paper = this.paper(),
+        var paper = this.renderer(),
         sbox, tbox;
 
         if (this.state === 'dragging') {
@@ -389,7 +382,7 @@ var Connection = Ds.Connection = Ds.DiagramElement.extend(/** @lends Connection.
     // are the start and end of the Connection.
 
     getPoints: function(boxes) {
-        var paper = this.paper(),
+        var paper = this.renderer(),
             sbox = boxes[0],
             tbox = boxes[1],
             line, sPoint, tPoint;

@@ -6,7 +6,7 @@
 
 function FlexPoint(connection, point) {
     this.connection = connection;
-    this.paper = connection.paper();
+    this.paper = connection.renderer();
     this.x = point.x;
     this.y = point.y;
 }

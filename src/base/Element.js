@@ -16,7 +16,6 @@
 
 var Element = Ds.Element = function (attributes) {
     this.attributes = {};
-    this.attributes.children = [];
 };
 
 // extend

@@ -19,7 +19,7 @@ var XYLayout = Layout.extend(/** @lends XYLayout.prototype */ {
     layout: function() {
         var shape = this.shape,
             bounds = shape.bounds(),
-            elements = shape.children,
+            elements = shape.attributes.children,
             l = elements.length, i = 0, el;
 
         for (; i < l ; i++) {

@@ -20,7 +20,7 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
             this.wrapper.remove();
         }
 
-        var paper = this.element.paper(),
+        var paper = this.element.renderer(),
             box = this.element.wrapper.getABox(),
             x = box.xRight - 40,
             y = box.y - 30;
@@ -60,7 +60,7 @@ var ToolBox = Ds.ToolBox = Ds.DiagramElement.extend({
 
     addItem: function(x, y, text, action) {
         var control = this;
-        var paper = this.element.paper();
+        var paper = this.element.renderer();
         var wrapper = paper.path(text);
 
         wrapper.attr({fill: "#000", stroke: "none"});

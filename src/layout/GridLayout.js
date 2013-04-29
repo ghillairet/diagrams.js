@@ -51,7 +51,7 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
      */
 
     getRows: function() {
-        var elements = this.shape.children;
+        var elements = this.shape.attributes.children;
         var columns = this.columns || elements.length;
 
         if (this.rows > 0)
@@ -61,7 +61,7 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
     },
 
     getColumns: function() {
-        var elements = this.shape.children;
+        var elements = this.shape.attributes.children;
 
         if (this.rows > 0)
             return Math.floor((elements.length + this.rows - 1) / this.rows);
@@ -74,7 +74,7 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
      */
 
     layout: function() {
-        if (!this.shape.children || !this.shape.children.length) return;
+        if (!this.shape.attributes.children || !this.shape.attributes.children.length) return;
 
         _.each(this.computeRows('preferred'), function(row) {
             _.each(row.cells, function(cell) { cell.layout(); });
@@ -88,7 +88,7 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
     computeRows: function(type) {
         var bounds = this.shape.bounds();
         var columns = this.getColumns();
-        var elements = this.shape.children;
+        var elements = this.shape.attributes.children;
 
         var rows = [];
         var current = { width: 0, height: 0, cells: [] };
@@ -226,7 +226,7 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
 
     size: function(type) {
         var width = 0, height = 0,
-            elements = this.shape.children,
+            elements = this.shape.attributes.children,
             columns = this.getColumns(),
             nbrows = this.getRows(),
             bounds = this.shape.bounds(),

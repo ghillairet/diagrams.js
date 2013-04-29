@@ -47,10 +47,12 @@ var Figure = Ds.Figure = Ds.Element.extend({
      */
 
     setMinValues: function(key, value) {
-        if ((key === 'width' || key === 'height') &&
-                !this.attributes['min' + key]) {
-                    this.attributes['min-' + key] = value;
-                }
+        var min = 'min-' + key;
+        if (key === 'width' || key === 'height') {
+            if (!this.attributes[min]) {
+                this.attributes[min] = value;
+            }
+        }
     },
 
     render: function() {},
@@ -99,15 +101,7 @@ var Figure = Ds.Figure = Ds.Element.extend({
      */
 
     renderer: function() {
-        if (!this.diagram) {
-            this.diagram = this.shape.diagram || this.shape.parent.diagram;
-        }
-
-        var renderer = this.diagram.paper();
-        if (!renderer)
-            throw new Error('Cannot render figure, renderer is not available.');
-
-        return renderer;
+        return this.shape.renderer();
     },
 
     // resize functions
@@ -280,7 +274,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
             this.wrapper.transform('t' + dx + ',' + dy);
             this.attributes.x = this.wrapper.attr('x');
             this.attributes.y = this.wrapper.attr('y');
-        //    this.set({ x: this.wrapper.attr('x'), y: this.wrapper.attr('y') });
         }
         return this;
     },

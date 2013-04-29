@@ -25,7 +25,7 @@ var Anchor = Ds.Anchor = Ds.DiagramElement.extend( /** @lends Anchor.prototype *
      */
 
     render: function() {
-        var paper = this.paper();
+        var paper = this.renderer();
         this.wrapper = paper.rect(this.x, this.y, 6, 6, 0)
             .attr(this.box.anchorStyle);
 

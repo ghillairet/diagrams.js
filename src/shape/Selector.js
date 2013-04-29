@@ -17,7 +17,7 @@ Ds.Selectable = {
         var width = bbox.width;
         var height = bbox.height;
 
-        this.selectionBox = this.paper().rect(x, y, width, height, 0);
+        this.selectionBox = this.renderer().rect(x, y, width, height, 0);
         this.selectionBox.attr(this.selectionStyle);
         this.selectionBox.toFront();
     },

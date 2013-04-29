@@ -20,81 +20,82 @@ var FlowLayout = Layout.extend(/** @lends FlowLayout.prototype */ {
      */
 
     layout: function() {
-        var offset = { x: this.shape.get('x'), y: this.shape.get('y') },
-            bounds = this.shape.bounds(),
-            elements = this.shape.children,
-            elementSize,
-            currentRow = [],
-            rowSize = { width: 0, height: 0 };
+        var limits = this.shape.bounds();
+        var elements = this.shape.get('children');
+        var i = 0, l = elements.length;
+        var el, elSize,
+            rw = 0, rh = 0,
+            rx = limits.x,
+            ry = limits.y;
 
-        var align = function(row, off, eSize, pSize) {
-            var position = { x: off.x, y: off.y },
-                i = 0,
-                length = row.length;
+        for (; i < l; i++) {
+            el = elements[i];
+            elSize = el.preferredSize();
 
-            position.x += (pSize.width - rowSize.width) / 2;
-
-            for (; i<length; i++) {
-                position.y = off.y;
-                row[i].set(position);
-                row[i].doLayout();
-                position.x += row[i].bounds().width;
+            if (rw + elSize.width > limits.width) {
+                rx = limits.x;
+                rw += elSize.width;
+                ry += rh;
+                el.set({ x: rx, y: ry });
+            } else {
+                el.set({ x: rx, y: ry });
+                rh = Math.max(elSize.height, rh);
+                rw += elSize.width;
+                rx += elSize.width;
             }
-        };
-
-        _.each(elements, function(e) {
-            elementSize = e.preferredSize();
-
-            if ((rowSize.width + elementSize.width) > bounds.width) {
-                align(currentRow, rowSize, bounds);
-                currentRow = [];
-                // new column
-                offset.y += elementSize.height;
-                rowSize.width = 0;
-                rowSize.height = 0;
-            }
-
-            rowSize.height = Math.max(rowSize.height, elementSize.height);
-            rowSize.width += elementSize.width;
-            e.set(elementSize);
-            currentRow.push(e);
-        });
-
-        align(currentRow, offset, elementSize, bounds);
+        }
     },
 
     /**
      * Returns the size of the element associated to the layout
      */
 
-    size: function() {
-        var bounds = this.shape.bounds(),
-            elements = this.shape.children,
-            i = 0,
-            width = 0,
-            height = 0,
-            first = false,
-            tSize,
-            type = 'preferred';
+    size: function(type) {
+        var limits = this.shape.bounds();
+        var width = 0, prefWidth = 0;
+        var height = 0, prefHeight = 0;
+        var elements = this.shape.get('children');
+        var i = 0;
+        var l = elements.length;
+        var el, elSize;
 
-        if (!elements || !elements.length)
-            return { width: bounds.width, height: bounds.height };
+        for (; i < l; i++) {
+            el = elements[i];
+            elSize = el[type + 'Size']();
 
-        for (; i < elements.length; i++) {
-            tSize = elements[i][type+'Size']();
-            height = Math.max(height, tSize.height);
-            width += tSize.width;
+            if (i === 0) {
+                width = elSize.width || 0;
+                height = elSize.height || 0;
+            } else if (width + elSize.width > limits.width) {
+                prefHeight += height;
+                prefWidth = Math.max(prefWidth, width);
+                width = elSize.width || 0;
+                height = elSize.height || 0;
+            } else {
+                width += elSize.width || 0;
+                height = Math.max(height, elSize.height || 0);
+            }
         }
 
-        if (width < bounds.width) {
-            width = bounds.width;
-        }
-        if (height < bounds.height) {
-            height = bounds.height;
-        }
+        prefHeight += height;
+        prefHeight = Math.max(limits.height, prefHeight);
+        prefWidth = Math.max(limits.width, Math.max(prefWidth, width));
 
-        return { width: width, height: height };
+        return { width: prefWidth, height: prefHeight };
+    },
+
+    preferredSize: function() {
+        return this.size('preferred');
+    },
+
+    minimumSize: function() {
+        return this.size('minimum');
+    },
+
+    maximumSize: function() {
+        return this.size('maximum');
     }
+
 
 });
 
