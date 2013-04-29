@@ -55,9 +55,8 @@
             stroke: 'black',
             'stroke-width': 2
         },
-        layout: { type: 'xy' },
-        children: [ MailTriangle ]
-    };
+        layout: { type: 'xy' }
+     };
 
     var EventMail = Ds.Shape.extend({
         resizable: false,
@@ -70,7 +69,11 @@
             title: 'Mail'
         },
         layout: { type: 'xy' },
-        children: [ Mail ]
+        initialize: function(attributes) {
+            var mail = new Ds.Shape(Mail);
+            mail.add(new Ds.Shape(MailTriangle));
+            this.add(mail);
+        }
     });
 
     // Timer
@@ -92,14 +95,13 @@
         figure: {
             type: 'circle',
             r: 18,
-            x: 25,
-            y: 25,
+            x: 7,
+            y: 7,
             fill: 'white',
             stroke: 'black',
             'stroke-width': 2
         },
-        layout: { type: 'xy' },
-        children: [ ClockHands ]
+        layout: { type: 'xy' }
     };
 
     var Timer = Ds.Shape.extend({
@@ -113,7 +115,11 @@
             title: 'Timer'
         },
         layout: { type: 'xy' },
-        children: [ Clock ]
+        initialize: function(attributes) {
+            var clock = new Ds.Shape(Clock);
+            clock.add(new Ds.Shape(ClockHands));
+            this.add(clock);
+        }
     });
 
     // Gateway
@@ -168,26 +174,20 @@
     });
 
     var diagram = new BPMNDiagram();
-    var mail = new EventMail({ x: 100, y: 100, diagram: diagram });
 
-    var timer = new Timer({ x: 250, y: 100, diagram: diagram });
+    var mail = new EventMail({ x: 100, y: 100 });
+/*
+    var timer = new Timer({ x: 250, y: 100 });
+    var c1 = new SequenceFlow({ source: mail, target: timer });
+    var task1 = new Task({ x: 350, y: 65 });
+    var c2 = new SequenceFlow({ source: timer, target: task1 });
+    var gt = new Gateway({ x: 500, y: 75 });
+    var c3 = new SequenceFlow({ source: task1, target: gt });
+    var task2 = new Task({ x: 650, y: 65 });
+    var c4 = new SequenceFlow({ source: gt, target: task2 });
+*/
 
-    var c1 = new SequenceFlow({ diagram: diagram });
-    c1.connect(mail, timer);
-
-    var task1 = new Task({ x: 350, y: 65, diagram: diagram });
-
-    var c2 = new SequenceFlow({ diagram: diagram });
-    c2.connect(timer, task1);
-    var gt = new Gateway({ x: 500, y: 75, diagram: diagram });
-    var c3 = new SequenceFlow({ diagram: diagram });
-    c3.connect(task1, gt);
-    var task2 = new Task({ x: 650, y: 65, diagram: diagram });
-    var c4 = new SequenceFlow({ diagram: diagram });
-    c4.connect(gt, task2);
-
+    diagram.add(mail); //, timer);//, c1, task1, c2, gt, c3, task2, c4);
     diagram.render();
-
-    console.log(diagram);
 
 })(window.Ds);

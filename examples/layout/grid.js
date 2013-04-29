@@ -51,9 +51,11 @@
     });
 
     dia = new Ds.Diagram({ el: 'diagram' });
-    var cont = new Container({ diagram: dia, x: 10, y: 10 });
+    var cont = new Container({ x: 10, y: 10 });
     var r1 = new Rectangle({ width: 50, height: 30, fill: 'red' });
 //    cont.add(r1);
+
+    dia.add(cont);
     dia.render();
 
     cont.on('add:children', cont.render);

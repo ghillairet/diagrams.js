@@ -41,7 +41,7 @@
 
     var createRectangle = function(e) {
         var point = Ds.Point.get(diagram, e);
-        var r = new Rectangle({ diagram: diagram, x: point.x, y: point.y });
+        diagram.add(new Rectangle({ x: point.x, y: point.y }));
     };
 
     var connect = function() {
@@ -49,7 +49,7 @@
     };
 
     var addShape = function() {
-        var selection = diagram.getSelection();
+        var selection = diagram.getSelection()[0];
         if (selection) {
             selection.add(new Rectangle({ fill: 'red', width: 20, height: 20 }));
             selection.render();

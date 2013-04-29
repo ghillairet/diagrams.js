@@ -45,18 +45,20 @@
     var i, position, shape;
     for (i = 0; i < 100; i++) {
         position = layout();
-        shape = d.createShape(Circle, { x: position.x, y: position.y, id: i });
+        d.add(new Circle({ x: position.x, y: position.y, id: i }));
     }
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
+
     for (i = 0; i < 100; i++) {
         var r = getRandomInt(0, 100);
         var target = d.getShape(r);
         var source = d.getShape(i);
-        if (target && source)
-            d.createConnection(Arrow, { source: source, target: target });
+        if (target && source) {
+            d.add(new Arrow({ source: source, target: target }));
+        }
     }
 
     d.render();

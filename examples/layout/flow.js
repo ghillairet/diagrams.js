@@ -1,24 +1,21 @@
 (function(Ds) {
 
-    var diagram = new Ds.Diagram({
-        el: 'diagram'
-    });
-
     var Container = Ds.Shape.extend({
-        resizable: false,
-        draggable: false,
+        resizable: true,
+        draggable: true,
         toolbox: false,
+
         figure: {
             type: 'rect',
             fill: 'whitesmoke',
             stroke: 'grey',
             'stroke-width': 1,
-            width: 800,
-            height: 400
+            width: 100,
+            height: 200
         },
+
         layout: {
-            type: 'flex',
-            stretch: false
+            type: 'flow'
         }
     });
 
@@ -38,28 +35,33 @@
             width: 50,
             height: 50
         },
-        labelFigure: {
-            text: 'hello'
-        },
-        initialize: function(attributes) {
-            this.add(new Ds.Label({ figure: this.labelFigure }));
-        },
         layout: { type: 'grid' }
     });
 
-    var container = new Container({ diagram: diagram, x: 100, y: 100 });
+    var Text = Ds.Label.extend({
+        figure: {
+            type: 'text',
+            'font-size': 20
+        }
+    });
+
+    var diagram = new Ds.Diagram({ el: 'diagram' });
+
+    var container = new Container({ x: 100, y: 100 });
+
     var r1 = new Rectangle({ width: 50, height: 50, fill: 'blue' });
     var r2 = new Rectangle({ width: 50, height: 50, fill: 'yellow' });
+    var c = new Circle({ r: 20, fill: 'gold' });
+    var c2 = new Circle({ r: 20, fill: 'purple' });
+    var l1 = new Text({ text: 'Hello World' });
+
     container.add(r1);
     container.add(r2);
-
-    var c = new Circle({ x: 200, y: 20, r: 20, fill: 'gold', diagram: diagram });
-    c.moveStyle.fill = 'blue';
-    var c2 = new Circle({ x: 200, y: 20, r: 20, fill: 'purple' });
+    container.add(c);
     container.add(c2);
-    var r3 = new Rectangle({ x: 100, y : 40, width: 50, height: 50, fill: 'yellow', diagram: diagram });
+    container.add(l1);
 
-    r1.children[0].set('font-size', 30);
-
+    diagram.add(container);
     diagram.render();
+
 })(window.Ds);

@@ -1,9 +1,5 @@
 (function(Ds) {
 
-    var ShapeDiagram = Ds.Diagram.extend({
-        el: 'diagram'
-    });
-
     var Circle = Ds.Shape.extend({
         figure: {
             type: 'circle',
@@ -25,88 +21,57 @@
         }
     });
 
-    var TriangleFigure = {
+    var Triangle = Ds.Shape.extend({
+        resizable: false,
         figure: {
             type: 'path',
             fill: 'white',
             path: 'M20,0L0,60L40,60Z',
             'stroke-width': 2
-        },
-        resizable: false,
-        draggable: false
-    };
-
-    var Triangle = Ds.Shape.extend({
-        resizable: false,
-        figure: {
-            type: 'rect',
-            width: 40,
-            height: 60,
-            fill: 'white',
-            'fill-opacity': 0,
-            stroke: 'none'
-        },
-        layout: { type: 'xy' },
-        children: [ TriangleFigure ]
+        }
     });
 
-    var DiamondFigure = {
+    var Diamond = Ds.Shape.extend({
+        resizable: false,
         figure: {
             type: 'path',
             path: 'M25,0L50,25L25,50L0,25Z',
             fill: 'orange',
             'stroke-width': 2
         }
-    };
-
-    var Diamond = Ds.Shape.extend({
-        resizable: false,
-        figure: {
-            type: 'rect',
-            width: 50,
-            height: 50,
-            fill: 'white',
-            'fill-opacity': 0,
-            'stroke-width': 0
-        },
-        layout: { type: 'xy' },
-        children: [ DiamondFigure ]
     });
 
-    var StarFigure = {
+    var Star = Ds.Shape.extend({
+        resizable: false,
         figure: {
             type: 'path',
             path: 'M25,0L20,20L0,20L16,30L5,50L25,40L45,50L34,30L50,20L30,20Z',
             fill: 'yellow',
             'stroke-width': 2
         }
-    };
-
-    var Star = Ds.Shape.extend({
-        resizable: false,
-        figure: {
-            type: 'rect',
-            width: 50,
-            height: 50,
-            stroke: 'none',
-            fill: 'white',
-            'fill-opacity': 0
-        },
-        layout: { type: 'xy' },
-        children: [ StarFigure ]
     });
 
-    var dia = new ShapeDiagram();
-    var c1 = new Circle({ x: 100, y: 100, diagram: dia });
-    var c2 = new Circle({ x: 300, y: 120, diagram: dia });
-    var s1 = new Square({ x: 400, y: 150, diagram: dia, resizable: true });
-    var s2 = new Square({ x: 500, y: 150, diagram: dia, draggable: false });
-    var t = new Triangle({ x: 100, y: 200, diagram: dia });
-    var d = new Diamond({ x: 300, y: 220, diagram: dia });
-    var s = new Star({ x: 400, y: 260, diagram: dia });
+    var Ellipse = Ds.Shape.extend({
+        figure: {
+            type: 'ellipse',
+            rx: 20,
+            ry: 30,
+            fill: 'yellow'
+        }
+    });
 
-//  d.on('click', function() { alert('Clicked!!'); });
+    var dia = new Ds.Diagram({ el: 'diagram' });
 
+    var c1 = new Circle({ x: 100, y: 100 });
+    var c2 = new Circle({ x: 300, y: 120 });
+    var s1 = new Square({ x: 400, y: 150, resizable: true });
+    var s2 = new Square({ x: 500, y: 150, draggable: false });
+    var t = new Triangle({ x: 100, y: 200 });
+    var d = new Diamond({ x: 300, y: 220 });
+    var s = new Star({ x: 400, y: 260 });
+    var e = new Ellipse({ x: 140, y: 300 });
+
+    dia.add(c1, c2, s1, s2, t, d, s, e);
     dia.render();
 
 })(window.Ds);

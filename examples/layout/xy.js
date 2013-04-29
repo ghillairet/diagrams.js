@@ -1,9 +1,5 @@
 (function(Ds) {
 
-    var diagram = new Ds.Diagram({
-        el: 'diagram'
-    });
-
     var Container = Ds.Shape.extend({
         resizable: false,
         draggable: true,
@@ -37,12 +33,16 @@
         }
     });
 
-    var container = new Container({ diagram: diagram, x: 100, y: 100 });
-    var c1 = new Circle({ r: 20, fill: 'red' });
+    var diagram = new Ds.Diagram({ el: 'diagram' });
+
+    var container = new Container({ x: 100, y: 100 });
+    var c1 = new Circle({ r: 20, fill: 'red', x: 200, y: 140 });
     var r1 = new Rectangle({ width: 50, height: 50, fill: 'blue', x: 100, y: 100 });
     var r2 = new Rectangle({ width: 50, height: 50, fill: 'yellow', x: 200, y: 200 });
     container.add(r1);
     container.add(r2);
+    container.add(c1);
 
+    diagram.add(container);
     diagram.render();
 })(window.Ds);

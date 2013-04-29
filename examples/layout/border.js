@@ -1,9 +1,5 @@
 (function(Ds) {
 
-    var diagram = new Ds.Diagram({
-        el: 'diagram'
-    });
-
     var Container = Ds.Shape.extend({
         resizable: true,
         draggable: true,
@@ -43,7 +39,9 @@
         }
     });
 
-    var container = new Container({ diagram: diagram, x: 100, y: 100 });
+    var diagram = new Ds.Diagram({ el: 'diagram' });
+
+    var container = new Container({ x: 100, y: 100 });
     var c1 = new Circle({ r: 20, fill: 'red' });
     var r1 = new Rectangle({ width: 50, height: 200, fill: 'blue' });
     var r2 = new Rectangle({ width: 50, height: 50, fill: 'yellow' });
@@ -61,6 +59,7 @@
     container.layout.east = r4;
     container.layout.center = r5;
 
+    diagram.add(container);
     diagram.render();
 
 })(window.Ds);

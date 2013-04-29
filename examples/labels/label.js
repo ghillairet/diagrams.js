@@ -59,16 +59,17 @@
     });
 
     var diagram = new Ds.Diagram({ el: 'diagram' });
-/*
-    var r = new Rectangle({ diagram: diagram, x: 200, y: 100 });
 
-    var r2 = new RectangleManyLabels({ diagram: diagram, x: 400, y: 120 });
+    var r = new Rectangle({ x: 200, y: 100 });
+
+    var r2 = new RectangleManyLabels({x: 400, y: 120 });
     r2.add(new Label({ text: 'short label' }));
     r2.add(new Label({ text: 'quit longer label' }));
     r2.add(new Label({ text: 'this is a very very long label' }));
-*/
-    var l = new Label({ diagram: diagram, x: 100, y: 100 });
-    diagram.get('children').push(l);
+
+    var l = new Label({ x: 100, y: 100 });
+
+    diagram.add(r, r2, l);
     diagram.render();
 
 })();
