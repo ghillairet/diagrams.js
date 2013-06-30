@@ -1,15 +1,42 @@
 
-     ____
-    /\  _`\   __                                                         __
-    \ \ \/\ \/\_\     __       __   _ __    __      ___ ___     ____    /\_\    ____
-     \ \ \ \ \/\ \  /'__`\   /'_ `\/\`'__\/'__`\  /' __` __`\  /',__\   \/\ \  /',__\
-      \ \ \_\ \ \ \/\ \L\.\_/\ \L\ \ \ \//\ \L\.\_/\ \/\ \/\ \/\__, `\__ \ \ \/\__, `\
-       \ \____/\ \_\ \__/.\_\ \____ \ \_\\ \__/.\_\ \_\ \_\ \_\/\____/\_\_\ \ \/\____/
-        \/___/  \/_/\/__/\/_/\/___L\ \/_/ \/__/\/_/\/_/\/_/\/_/\/___/\/_/\ \_\ \/___/
-                               /\____/                                  \ \____/
-                               \_/__/                                    \/___/
+### Diagrams.js
 
-Diagrams.js - Javascript Diagramming Library
+Javascript Diagramming Library
+
+(Not ready for use - still in development)
+
+### Dependencies
+
+underscore
+svg.js
+svg.draggable.js
+
+### Usage
+
+```javascript
+var diagram = new DG.Diagram('canvas');
+
+var RectShape = DG.Shape.extend({
+    figure:  {
+        type: 'rect',
+        width: 100,
+        height: 100,
+        fill: '#fff',
+        cursor: 'move',
+        stroke: '#666',
+        'stroke-width': 1
+    }
+});
+
+var r1 = new RectShape({ x: 100, y: 100 });
+var r2 = new RectShape({ x: 200, y: 100 });
+var c = new DG.Connection();
+c.connect(r1, r2)
+diagram.add(r1, r2, c);
+
+diagram.render();
+
+```
 
 ## License
 This software is distributed under the terms of the Eclipse Public License 1.0 - http://www.eclipse.org/legal/epl-v10.html.

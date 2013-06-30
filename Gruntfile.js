@@ -1,44 +1,26 @@
 module.exports = function(grunt) {
 
     grunt.initConfig({
+        pkg: grunt.file.readJSON('package.json'),
 
         concat: {
             dist: {
                 src: [
                     'build/start.js',
-                    'src/extensions.js',
-                    'src/styles/Styles.js',
-                    'src/base/Point.js',
-                    'src/base/Line.js',
-                    'src/base/Events.js',
-                    'src/base/Element.js',
-                    'src/figures/Figure.js',
-                    'src/figures/Rectangle.js',
-                    'src/figures/Circle.js',
-                    'src/figures/Ellipse.js',
-                    'src/figures/Path.js',
-                    'src/figures/Text.js',
-                    'src/diagram/DiagramElement.js',
-                    'src/layout/Layout.js',
-                    'src/diagram/LayoutElement.js',
-                    'src/diagram/Diagram.js',
-                    'src/diagram/Toolbox.js',
-                    'src/layout/GridLayout.js',
-                    'src/layout/FlowLayout.js',
-                    'src/layout/XYLayout.js',
-                    'src/layout/BorderLayout.js',
-                    'src/shape/BoundBox.js',
-                    'src/shape/Selector.js',
-                    'src/shape/Anchor.js',
-                    'src/shape/Image.js',
-                    'src/shape/Label.js',
-                    'src/shape/Shape.js',
-                    'src/connection/Arrows.js',
-                    'src/connection/Anchor.js',
-                    'src/connection/ConnectionEnd.js',
-                    'src/connection/ConnectionLabel.js',
-                    'src/connection/FlexPoint.js',
-                    'src/connection/Connection.js',
+                    'src/Base.js',
+                    'src/Math.js',
+                    'src/Arrows.js',
+                    'src/Events.js',
+                    'src/SelectionBox.js',
+                    'src/Diagram.js',
+                    'src/GridLayout.js',
+                    'src/Layout.js',
+                    'src/Figure.js',
+                    'src/Connection.js',
+                    'src/Anchor.js',
+                    'src/ConnectionAnchor.js',
+                    'src/Shape.js',
+                    'src/Label.js',
                     'build/end.js'
                 ],
                 dest: 'dist/diagrams.js'
@@ -67,9 +49,24 @@ module.exports = function(grunt) {
         },
 
         uglify: {
-            dist: {
-                files: {
-                    'dist/diagrams.min.js': ['dist/diagrams.js']
+            options: {
+                banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
+                mangle: true,
+                compress: true,
+                report: 'gzip'
+            },
+            build: {
+                src: 'dist/diagrams.js',
+                dest: 'dist/diagrams.min.js'
+            }
+        },
+
+        watch: {
+            scripts: {
+                files: ['src/*.js'],
+                tasks: ['build'],
+                options: {
+                    nospawn: true
                 }
             }
         }
@@ -83,6 +80,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-concat');
 
     grunt.registerTask('test', ['concat', 'mocha']);
-    grunt.registerTask('build', ['concat', 'uglify']);
+    grunt.registerTask('build', ['uglify']);
+    grunt.registerTask('default', ['concat', 'uglify']);
     grunt.registerTask('doc', ['jsdoc']);
 };
+
