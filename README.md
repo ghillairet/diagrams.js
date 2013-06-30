@@ -1,17 +1,15 @@
-
-### Diagrams.js
+# Diagrams.js
 
 Javascript Diagramming Library
 
 (Not ready for use - still in development)
 
-### Dependencies
+## Dependencies
 
-underscore
-svg.js
-svg.draggable.js
+- underscore
+- svg.js (with svg.draggable.js)
 
-### Usage
+## Usage
 
 ```javascript
 var diagram = new DG.Diagram('canvas');
